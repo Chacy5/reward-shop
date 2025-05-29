@@ -1,405 +1,139 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Reward Shop</title>
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat+Alternates:wght@400;600&display=swap" rel="stylesheet" />
-  <style>
-    * {
-      box-sizing: border-box;
-    }
-
-    body {
-      font-family: 'Montserrat Alternates', sans-serif;
-      margin: 0;
-      padding: 20px;
-      background: #eafff8;
-      color: #333;
-      padding-bottom: 70px;
-    }
-
-    h1,
-    h2 {
-      color: #065f54;
-    }
-
-    .section {
-      background: #ffffff;
-      padding: 16px;
-      border-radius: 16px;
-      margin-bottom: 20px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-    }
-
-    .counter {
-      font-size: 1.5rem;
-      font-weight: bold;
-      text-align: center;
-      background: #b2fff0;
-      padding: 20px;
-      border-radius: 16px;
-      margin-bottom: 20px;
-    }
-
-    input,
-    button,
-    select {
-      font-size: 1rem;
-      padding: 10px;
-      margin: 6px 0;
-      border: 1px solid #ccc;
-      border-radius: 12px;
-      width: 100%;
-    }
-
-    button {
-      background: #6fedd1;
-      color: #fff;
-      font-weight: bold;
-      border: none;
-      cursor: pointer;
-      transition: background-color 0.2s ease, transform 0.1s ease;
-    }
-
-    button:active {
-      transform: scale(0.97);
-      background-color: #57e1c0;
-    }
-
-    .card {
-      background: #f0fffa;
-      border-left: 6px solid #6fedd1;
-      border-radius: 10px;
-      padding: 12px;
-      margin: 10px 0;
-      opacity: 0;
-      transform: translateY(10px);
-      animation: fadeInUp 0.4s ease forwards;
-    }
-
-    .card.daily {
-      border-left-color: #6fedd1;
-    }
-
-    .card.weekly {
-      border-left-color: #fdd36a;
-    }
-
-    .card.event {
-      border-left-color: #ff9edb;
-    }
-
-    .desc {
-      font-size: 0.9rem;
-      color: #555;
-    }
-
-    .flex {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 10px;
-    }
-
-    nav a {
-      flex: 1;
-      text-align: center;
-      padding: 10px;
-      text-decoration: none;
-      color: #065f54;
-      font-weight: bold;
-    }
-
-    .bottom-nav {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      background: #ffffff;
-      border-top: 1px solid #ccc;
-      display: flex;
-      justify-content: space-around;
-      z-index: 1000;
-    }
-
-    .bottom-nav a.active {
-      background: #e0fff8;
-      border-top: 3px solid #6fedd1;
-    }
-
-    @keyframes fadeInUp {
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    html {
-      scroll-behavior: smooth;
-    }
-
-    .loader {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(255, 255, 255, 0.8);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      z-index: 9999;
-      font-size: 1.2rem;
-      font-weight: bold;
-      color: #065f54;
-    }
-  </style>
+  <meta charset="UTF-8">
+  <title>Reward Shop UI</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="google-signin-client_id" content="YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com">
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat+Alternates:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
-  <div class="loader" id="loader">Загрузка...</div>
-
-  <nav class="bottom-nav">
-    <a href="#main" id="nav-main" class="active">🏠 Главная</a>
-    <a href="#rewardList" id="nav-reward">🏪 Магазин</a>
-    <a href="#completed" id="nav-completed">✅ Задания</a>
-    <a href="#claimed" id="nav-claimed">🎉 Награды</a>
+  <div class="loader" id="loader" style="display:none">Loading...</div>
+  <header>
+    <span>🎉 Reward Shop</span>
+    <span id="user-info">
+      <button id="auth-btn" onclick="startGoogleAuth()">Sign in with Google</button>
+      <span id="user-profile" style="display:none;">
+        <img id="user-avatar" src="" alt="User" />
+        <span id="user-name"></span>
+        <button id="signout-btn" onclick="signOut()" style="display:none;">Sign out</button>
+      </span>
+    </span>
+  </header>
+  <main>
+    <div id="page-main" class="page active"></div>
+    <div id="page-shop" class="page"></div>
+    <div id="page-tasks" class="page"></div>
+    <div id="page-claimed" class="page"></div>
+    <div id="page-settings" class="page"></div>
+  </main>
+  <!-- Модалки для создания квеста и награды -->
+  <div id="quest-modal-bg" class="modal-bg">
+    <div class="modal">
+      <h2>📝 New Quest</h2>
+      <div class="input-group">
+        <select id="questType">
+          <option value="daily">Daily</option>
+          <option value="weekly">Weekly</option>
+          <option value="event">Event</option>
+        </select>
+        <input type="text" id="taskName" placeholder="Quest Name" />
+        <select id="taskEmoji">
+          <option value="">No category</option>
+          <option value="🎯">🎯 Goal</option>
+          <option value="📚">📚 Study</option>
+          <option value="🧹">🧹 Cleaning</option>
+          <option value="💪">💪 Sport</option>
+          <option value="🌿">🌿 Nature</option>
+          <option value="📝">📝 Note</option>
+          <option value="🧠">🧠 Growth</option>
+        </select>
+        <input type="text" id="taskDesc" placeholder="Description" />
+        <input type="number" id="taskPoints" placeholder="Reward points" />
+        <div style="display:flex;gap:10px;">
+          <button onclick="addTask(); closeQuestModal();">Add Quest</button>
+          <button class="close-btn" onclick="closeQuestModal()">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div id="reward-modal-bg" class="modal-bg">
+    <div class="modal">
+      <h2>🎁 New Reward</h2>
+      <div class="input-group">
+        <input type="text" id="rewardName" placeholder="Reward Name" />
+        <select id="rewardEmoji">
+          <option value="">No category</option>
+          <option value="🎁">🎁 Gift</option>
+          <option value="🍫">🍫 Sweets</option>
+          <option value="☕">☕ Coffee</option>
+          <option value="🛋️">🛋️ Rest</option>
+          <option value="🎮">🎮 Games</option>
+          <option value="🧸">🧸 Cute</option>
+        </select>
+        <input type="text" id="rewardDesc" placeholder="Description" />
+        <input type="number" id="rewardCost" placeholder="Cost in paw points" />
+        <div style="display:flex;gap:10px;">
+          <button onclick="addReward(); closeRewardModal();">Add Reward</button>
+          <button class="close-btn" onclick="closeRewardModal()">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <svg style="display:none;">
+    <symbol id="nav-home" viewBox="0 0 24 24">
+      <path d="M12 4.5L3 12.5M12 4.5l9 8m-9-8v12m-6 4v-7.5m0 7.5h12m0 0V12.5m0 7.5h6v-7.5" stroke="#065f54" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    </symbol>
+    <symbol id="nav-shop" viewBox="0 0 24 24">
+      <path d="M3 9.5h18v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-9zm0 0L4.5 4h15L21 9.5" stroke="#065f54" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="7.5" cy="14.5" r="1.5" fill="#b2fff0" stroke="#065f54" stroke-width="1"/>
+      <circle cx="16.5" cy="14.5" r="1.5" fill="#b2fff0" stroke="#065f54" stroke-width="1"/>
+    </symbol>
+    <symbol id="nav-tasks" viewBox="0 0 24 24">
+      <rect x="3" y="4" width="18" height="16" rx="2" fill="none" stroke="#065f54" stroke-width="1.5"/>
+      <path d="M7 9h10M7 13h7" stroke="#065f54" stroke-width="1.5" stroke-linecap="round"/>
+    </symbol>
+    <symbol id="nav-rewards" viewBox="0 0 24 24">
+      <rect x="3" y="8" width="18" height="13" rx="2" fill="none" stroke="#065f54" stroke-width="1.5"/>
+      <path d="M12 3v5m0 0l3.5-3.5M12 8l-3.5-3.5" stroke="#065f54" stroke-width="1.5" stroke-linecap="round"/>
+    </symbol>
+    <symbol id="nav-settings" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="3" fill="none" stroke="#065f54" stroke-width="1.5"/>
+      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2.07 2.07 0 0 1-2.93 2.93l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2.07 2.07 0 0 1-4.14 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2.07 2.07 0 0 1-2.93-2.93l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2.07 2.07 0 0 1 0-4.14h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2.07 2.07 0 0 1 2.93-2.93l.06.06a1.65 1.65 0 0 0 1.82.33h.02A1.65 1.65 0 0 0 9 5.09V5a2.07 2.07 0 0 1 4.14 0v.09a1.65 1.65 0 0 0 1 1.51h.02a1.65 1.65 0 0 0 1.82-.33l.06-.06a2.07 2.07 0 0 1 2.93 2.93l-.06.06a1.65 1.65 0 0 0-.33 1.82v.02A1.65 1.65 0 0 0 19.4 9H21a2.07 2.07 0 0 1 0 4.14h-.09a1.65 1.65 0 0 0-1.51 1z" fill="none" stroke="#065f54" stroke-width="1.1"/>
+    </symbol>
+    <symbol id="role-user" viewBox="0 0 24 24">
+      <circle cx="12" cy="8" r="4" fill="none" stroke="#a4067b" stroke-width="1.5"/>
+      <path d="M3 20v-1a6 6 0 0 1 12 0v1" fill="none" stroke="#a4067b" stroke-width="1.5"/>
+    </symbol>
+    <symbol id="role-admin" viewBox="0 0 24 24">
+      <circle cx="12" cy="8" r="4" fill="none" stroke="#65430a" stroke-width="1.5"/>
+      <rect x="7" y="15" width="10" height="5" rx="2.5" fill="none" stroke="#65430a" stroke-width="1.5"/>
+    </symbol>
+  </svg>
+  <nav class="bottom">
+    <a data-page="main" class="active" title="Home">
+      <svg class="nav-icon"><use href="#nav-home"/></svg>
+      <span class="nav-label">Home</span>
+    </a>
+    <a data-page="shop" title="Shop">
+      <svg class="nav-icon"><use href="#nav-shop"/></svg>
+      <span class="nav-label">Shop</span>
+    </a>
+    <a data-page="tasks" title="Quests">
+      <svg class="nav-icon"><use href="#nav-tasks"/></svg>
+      <span class="nav-label">Quests</span>
+    </a>
+    <a data-page="claimed" title="Rewards">
+      <svg class="nav-icon"><use href="#nav-rewards"/></svg>
+      <span class="nav-label">Rewards</span>
+    </a>
+    <a data-page="settings" title="Settings">
+      <svg class="nav-icon"><use href="#nav-settings"/></svg>
+      <span class="nav-label">Settings</span>
+    </a>
   </nav>
-
-  <div class="counter">
-    Лапки: <span id="points">0</span>
-  </div>
-
-  <div id="main">
-    <div class="section">
-      <h2>📝 Новое задание</h2>
-      <select id="questType">
-        <option value="daily">Ежедневное</option>
-        <option value="weekly">Еженедельное</option>
-        <option value="event">Событие</option>
-      </select>
-      <input type="text" id="taskName" placeholder="Название" />
-      <input type="text" id="taskDesc" placeholder="Описание" />
-      <input type="number" id="taskPoints" placeholder="Награда (лапки)" />
-      <button onclick="addTask()">Добавить</button>
-    </div>
-
-    <div class="section">
-      <h2>📋 Задания</h2>
-      <div id="questLists"></div>
-    </div>
-
-    <div class="section">
-      <h2>🎁 Новая награда</h2>
-      <input type="text" id="rewardName" placeholder="Название награды" />
-      <input type="text" id="rewardDesc" placeholder="Описание" />
-      <input type="number" id="rewardCost" placeholder="Стоимость (лапки)" />
-      <button onclick="addReward()">Добавить</button>
-    </div>
-
-    <div class="section" id="rewardListSection">
-      <h2>🏪 Магазин наград</h2>
-      <div id="rewardList"></div>
-    </div>
-  </div>
-
-  <div class="section" id="completed">
-    <h2>✅ Выполненные задания</h2>
-    <div id="completedList"></div>
-  </div>
-
-  <div class="section" id="claimed">
-    <h2>🎉 Приобретенные награды</h2>
-    <div id="claimedList"></div>
-  </div>
-
-  <script>
-    let points = parseInt(localStorage.getItem('pawPoints') || '0');
-    let quests = JSON.parse(localStorage.getItem('pawQuests') || '[]');
-    let completed = JSON.parse(localStorage.getItem('pawCompleted') || '[]');
-    let rewards = JSON.parse(localStorage.getItem('pawRewards') || '[]');
-    let claimed = JSON.parse(localStorage.getItem('pawClaimed') || '[]');
-
-    function saveAll() {
-      localStorage.setItem('pawPoints', points);
-      localStorage.setItem('pawQuests', JSON.stringify(quests));
-      localStorage.setItem('pawCompleted', JSON.stringify(completed));
-      localStorage.setItem('pawRewards', JSON.stringify(rewards));
-      localStorage.setItem('pawClaimed', JSON.stringify(claimed));
-    }
-
-    function updatePoints() {
-      document.getElementById('points').innerText = points;
-      saveAll();
-    }
-
-    function addTask() {
-      const type = document.getElementById('questType').value;
-      const name = document.getElementById('taskName').value.trim();
-      const desc = document.getElementById('taskDesc').value.trim();
-      const pts = parseInt(document.getElementById('taskPoints').value);
-      if (!name || isNaN(pts)) return alert('Пожалуйста, введите корректные данные для задания.');
-
-      const createdAt = new Date().toISOString();
-      quests.push({ type, name, desc, pts, createdAt });
-      renderQuests();
-
-      document.getElementById('taskName').value = '';
-      document.getElementById('taskDesc').value = '';
-      document.getElementById('taskPoints').value = '';
-      saveAll();
-    }
-
-    function completeTask(index) {
-      const q = quests[index];
-      points += q.pts;
-      completed.push({ ...q, completedAt: new Date().toISOString() });
-      quests.splice(index, 1);
-      renderQuests();
-      renderCompleted();
-      updatePoints();
-    }
-
-    function deleteQuest(index) {
-      if (confirm('Удалить задание?')) {
-        quests.splice(index, 1);
-        renderQuests();
-        saveAll();
-      }
-    }
-
-    function renderQuests() {
-      const container = document.getElementById('questLists');
-      container.innerHTML = '';
-      ['daily', 'weekly', 'event'].forEach((type) => {
-        const filtered = quests.filter(q => q.type === type);
-        if (filtered.length === 0) return;
-        const h = document.createElement('h3');
-        h.textContent = type === 'daily' ? 'Ежедневные' : type === 'weekly' ? 'Еженедельные' : 'События';
-        container.appendChild(h);
-        filtered.forEach((q, i) => {
-          const globalIndex = quests.indexOf(q);
-          const card = document.createElement('div');
-          card.className = 'card ' + type;
-          card.innerHTML = `
-            <div class="flex">
-              <div>
-                <b>${q.name}</b> <span>(${q.pts} лапок)</span>
-                <p class="desc">${q.desc || ''}</p>
-              </div>
-              <div>
-                <button onclick="completeTask(${globalIndex})" title="Выполнить">✔️</button>
-                <button onclick="deleteQuest(${globalIndex})" title="Удалить">❌</button>
-              </div>
-            </div>
-          `;
-          container.appendChild(card);
-        });
-      });
-      saveAll();
-    }
-
-    function renderCompleted() {
-      const container = document.getElementById('completedList');
-      container.innerHTML = '';
-      if (completed.length === 0) {
-        container.innerHTML = '<p>Пока нет выполненных заданий.</p>';
-        return;
-      }
-      completed.forEach(q => {
-        const card = document.createElement('div');
-        card.className = 'card daily';
-        card.innerHTML = `
-          <b>${q.name}</b> <span>(${q.pts} лапок)</span>
-          <p class="desc">${q.desc || ''}</p>
-          <small>Выполнено: ${new Date(q.completedAt).toLocaleString()}</small>
-        `;
-        container.appendChild(card);
-      });
-    }
-
-    function addReward() {
-      const name = document.getElementById('rewardName').value.trim();
-      const desc = document.getElementById('rewardDesc').value.trim();
-      const cost = parseInt(document.getElementById('rewardCost').value);
-      if (!name || isNaN(cost)) return alert('Пожалуйста, введите корректные данные для награды.');
-      rewards.push({ name, desc, cost });
-      renderRewards();
-
-      document.getElementById('rewardName').value = '';
-      document.getElementById('rewardDesc').value = '';
-      document.getElementById('rewardCost').value = '';
-      saveAll();
-    }
-
-    function renderRewards() {
-      const container = document.getElementById('rewardList');
-      container.innerHTML = '';
-      if (rewards.length === 0) {
-        container.innerHTML = '<p>Пока нет наград в магазине.</p>';
-        return;
-      }
-      rewards.forEach((r, i) => {
-        const card = document.createElement('div');
-        card.className = 'card event';
-        card.innerHTML = `
-          <b>${r.name}</b> <span>(${r.cost} лапок)</span>
-          <p class="desc">${r.desc || ''}</p>
-          <button onclick="claimReward(${i})" ${points < r.cost ? 'disabled style="opacity:0.6;cursor:not-allowed"' : ''}>Купить</button>
-        `;
-        container.appendChild(card);
-      });
-    }
-
-    function claimReward(index) {
-      const r = rewards[index];
-      if (points < r.cost) return alert('Недостаточно лапок для покупки.');
-      points -= r.cost;
-      claimed.push({ ...r, claimedAt: new Date().toISOString() });
-      renderClaimed();
-      updatePoints();
-      renderRewards();
-      saveAll();
-    }
-
-    function renderClaimed() {
-      const container = document.getElementById('claimedList');
-      container.innerHTML = '';
-      if (claimed.length === 0) {
-        container.innerHTML = '<p>Пока нет приобретенных наград.</p>';
-        return;
-      }
-      claimed.forEach(r => {
-        const card = document.createElement('div');
-        card.className = 'card weekly';
-        card.innerHTML = `
-          <b>${r.name}</b>
-          <p class="desc">${r.desc || ''}</p>
-          <small>Куплено: ${new Date(r.claimedAt).toLocaleString()}</small>
-        `;
-        container.appendChild(card);
-      });
-    }
-
-    function init() {
-      updatePoints();
-      renderQuests();
-      renderCompleted();
-      renderRewards();
-      renderClaimed();
-      document.getElementById('loader').style.display = 'none';
-    }
-
-    window.onload = init;
-
-    // Навигация по якорям, чтобы менять активный класс
-    const navLinks = document.querySelectorAll('.bottom-nav a');
-    navLinks.forEach(link => {
-      link.addEventListener('click', () => {
-        navLinks.forEach(l => l.classList.remove('active'));
-        link.classList.add('active');
-      });
-    });
-  </script>
+  <script src="app.js"></script>
 </body>
 </html>
