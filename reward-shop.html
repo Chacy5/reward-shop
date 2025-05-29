@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Reward Shop</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background: #fff9f4;
+      color: #333;
+    }
+
+    h1 {
+      font-size: 1.8rem;
+      margin-bottom: 10px;
+    }
+
+    h2 {
+      font-size: 1.3rem;
+      margin: 16px 0 10px;
+    }
+
+    .section {
+      background: #ffffff;
+      padding: 16px;
+      border-radius: 16px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+
+    .counter {
+      font-size: 1.5rem;
+      font-weight: bold;
+      text-align: center;
+      background: #ffecd9;
+      padding: 20px;
+      border-radius: 16px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    input, button, select {
+      font-size: 1rem;
+      padding: 10px;
+      margin: 6px 0;
+      border: 1px solid #ccc;
+      border-radius: 12px;
+      width: 100%;
+    }
+
+    button {
+      background: #ffad60;
+      color: #fff;
+      font-weight: bold;
+      border: none;
+      cursor: pointer;
+    }
+
+    .btn:disabled {
+      background: #ccc;
+    }
+
+    .card {
+      background: #fef4eb;
+      border-radius: 12px;
+      padding: 12px;
+      margin: 10px 0;
+    }
+
+    .category {
+      font-weight: bold;
+      margin-top: 10px;
+    }
+
+    .card .desc {
+      color: #666;
+      font-size: 0.9rem;
+    }
+
+    .flex {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+    }
+  </style>
+</head>
+<body>
+  <h1>🐾 Reward Shop</h1>
+
+  <div class="counter">
+    Лапки: <span id="points">0</span>
+  </div>
+
+  <div class="section">
+    <h2>📝 Новое задание</h2>
+    <select id="questType">
+      <option value="daily">Ежедневное</option>
+      <option value="weekly">Еженедельное</option>
+      <option value="event">Событие</option>
+    </select>
+    <input type="text" id="taskName" placeholder="Название задания">
+    <input type="text" id="taskDesc" placeholder="Описание задания">
+    <input type="number" id="taskPoints" placeholder="Награда (лапки)">
+    <button onclick="addTask()">Добавить</button>
+  </div>
+
+  <div class="section">
+    <h2>📋 Задания</h2>
+    <div id="questLists"></div>
+  </div>
+
+  <div class="section">
+    <h2>🎁 Новая награда</h2>
+    <input type="text" id="rewardName" placeholder="Название награды">
+    <input type="text" id="rewardDesc" placeholder="Описание">
+    <input type="number" id="rewardCost" placeholder="Стоимость (лапки)">
+    <button onclick="addReward()">Добавить</button>
+  </div>
+
+  <div class="section">
+    <h2>🏪 Магазин наград</h2>
+    <div id="rewardList"></div>
+  </div>
+
+  <script>
+    let points = parseInt(localStorage.getItem('pawPoints') || '0');
+    let quests = JSON.parse(localStorage.getItem('pawQuests') || '[]');
+    let rewards = JSON.parse(localStorage.getItem('pawRewards') || '[]');
+
+    function saveAll() {
+      localStorage.setItem('pawPoints', points);
+      localStorage.setItem('pawQuests', JSON.stringify(quests));
+      localStorage.setItem('pawRewards', JSON.stringify(rewards));
+    }
+
+    function updatePoints() {
+      document.getElementById('points').innerText = points;
+      saveAll();
+    }
+
+    function addTask() {
+      const type = document.getElementById('questType').value;
+      const name = document.getElementById('taskName').value;
+      const desc = document.getElementById('taskDesc').value;
+      const pts = parseInt(document.getElementById('taskPoints').value);
+      if (!name || isNaN(pts)) return;
+
+      quests.push({ type, name, desc, pts });
+      document.getElementById('taskName').value = '';
+      document.getElementById('taskDesc').value = '';
+      document.getElementById('taskPoints').value = '';
+      renderQuests();
+    }
+
+    function completeTask(index) {
+      points += quests[index].pts;
+      quests.splice(index, 1);
+      renderQuests();
+      updatePoints();
+    }
+
+    function renderQuests() {
+      const container = document.getElementById('questLists');
+      container.innerHTML = '';
+      const categories = ['daily', 'weekly', 'event'];
+      const titles = { daily: 'Ежедневные', weekly: 'Еженедельные', event: 'События' };
+      categories.forEach(type => {
+        const filtered = quests.filter(q => q.type === type);
+        if (filtered.length > 0) {
+          container.innerHTML += `<div class='category'>${titles[type]}</div>`;
+          filtered.forEach((q, i) => {
+            container.innerHTML += `
+              <div class="card">
+                <div class="flex">
+                  <div><strong>${q.name}</strong><div class="desc">${q.desc}</div></div>
+                  <button onclick="completeTask(${quests.indexOf(q)})">+${q.pts}</button>
+                </div>
+              </div>`;
+          });
+        }
+      });
+      saveAll();
+    }
+
+    function addReward() {
+      const name = document.getElementById('rewardName').value;
+      const desc = document.getElementById('rewardDesc').value;
+      const cost = parseInt(document.getElementById('rewardCost').value);
+      if (!name || isNaN(cost)) return;
+
+      rewards.push({ name, desc, cost });
+      document.getElementById('rewardName').value = '';
+      document.getElementById('rewardDesc').value = '';
+      document.getElementById('rewardCost').value = '';
+      renderRewards();
+    }
+
+    function claimReward(index) {
+      if (points >= rewards[index].cost) {
+        points -= rewards[index].cost;
+        alert(`🎁 Получено: ${rewards[index].name}`);
+        updatePoints();
+        renderRewards();
+      }
+    }
+
+    function renderRewards() {
+      const list = document.getElementById('rewardList');
+      list.innerHTML = '';
+      rewards.forEach((r, i) => {
+        list.innerHTML += `
+          <div class="card">
+            <div class="flex">
+              <div><strong>${r.name}</strong><div class="desc">${r.desc}</div></div>
+              <button onclick="claimReward(${i})" ${points < r.cost ? 'disabled' : ''}>-${r.cost}</button>
+            </div>
+          </div>`;
+      });
+      saveAll();
+    }
+
+    updatePoints();
+    renderQuests();
+    renderRewards();
+  </script>
+</body>
+</html>
