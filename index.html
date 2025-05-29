@@ -9,24 +9,29 @@
     * {
       box-sizing: border-box;
     }
+
     body {
       font-family: 'Montserrat Alternates', sans-serif;
       margin: 0;
       padding: 20px;
       background: #eafff8;
       color: #333;
-      padding-bottom: 70px; /* Для нижней навигации */
+      padding-bottom: 70px;
     }
-    h1, h2 {
+
+    h1,
+    h2 {
       color: #065f54;
     }
+
     .section {
       background: #ffffff;
       padding: 16px;
       border-radius: 16px;
       margin-bottom: 20px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
     }
+
     .counter {
       font-size: 1.5rem;
       font-weight: bold;
@@ -36,7 +41,10 @@
       border-radius: 16px;
       margin-bottom: 20px;
     }
-    input, button, select {
+
+    input,
+    button,
+    select {
       font-size: 1rem;
       padding: 10px;
       margin: 6px 0;
@@ -44,18 +52,21 @@
       border-radius: 12px;
       width: 100%;
     }
+
     button {
       background: #6fedd1;
       color: #fff;
       font-weight: bold;
       border: none;
       cursor: pointer;
-      transition: transform 0.1s, background-color 0.2s;
+      transition: background-color 0.2s ease, transform 0.1s ease;
     }
+
     button:active {
       transform: scale(0.97);
       background-color: #57e1c0;
     }
+
     .card {
       background: #f0fffa;
       border-left: 6px solid #6fedd1;
@@ -66,26 +77,31 @@
       transform: translateY(10px);
       animation: fadeInUp 0.4s ease forwards;
     }
+
     .card.daily {
       border-left-color: #6fedd1;
     }
+
     .card.weekly {
       border-left-color: #fdd36a;
     }
+
     .card.event {
       border-left-color: #ff9edb;
     }
+
     .desc {
       font-size: 0.9rem;
       color: #555;
-      margin-top: 4px;
     }
+
     .flex {
       display: flex;
       justify-content: space-between;
       align-items: center;
       gap: 10px;
     }
+
     nav a {
       flex: 1;
       text-align: center;
@@ -94,6 +110,7 @@
       color: #065f54;
       font-weight: bold;
     }
+
     .bottom-nav {
       position: fixed;
       bottom: 0;
@@ -105,17 +122,30 @@
       justify-content: space-around;
       z-index: 1000;
     }
+
     .bottom-nav a.active {
       background: #e0fff8;
       border-top: 3px solid #6fedd1;
     }
+
+    @keyframes fadeInUp {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
     html {
       scroll-behavior: smooth;
     }
+
     .loader {
       position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(255,255,255,0.8);
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(255, 255, 255, 0.8);
       display: flex;
       justify-content: center;
       align-items: center;
@@ -140,29 +170,37 @@
     Лапки: <span id="points">0</span>
   </div>
 
-  <div id="main" class="section">
-    <h2>📝 Новое задание</h2>
-    <select id="questType">
-      <option value="daily">Ежедневное</option>
-      <option value="weekly">Еженедельное</option>
-      <option value="event">Событие</option>
-    </select>
-    <input type="text" id="taskName" placeholder="Название" />
-    <input type="text" id="taskDesc" placeholder="Описание" />
-    <input type="number" id="taskPoints" placeholder="Награда (лапки)" />
-    <button onclick="addTask()">Добавить</button>
+  <div id="main">
+    <div class="section">
+      <h2>📝 Новое задание</h2>
+      <select id="questType">
+        <option value="daily">Ежедневное</option>
+        <option value="weekly">Еженедельное</option>
+        <option value="event">Событие</option>
+      </select>
+      <input type="text" id="taskName" placeholder="Название" />
+      <input type="text" id="taskDesc" placeholder="Описание" />
+      <input type="number" id="taskPoints" placeholder="Награда (лапки)" />
+      <button onclick="addTask()">Добавить</button>
+    </div>
 
-    <h2 style="margin-top:30px;">📋 Задания</h2>
-    <div id="questLists"></div>
+    <div class="section">
+      <h2>📋 Задания</h2>
+      <div id="questLists"></div>
+    </div>
 
-    <h2 style="margin-top:30px;">🎁 Новая награда</h2>
-    <input type="text" id="rewardName" placeholder="Название награды" />
-    <input type="text" id="rewardDesc" placeholder="Описание" />
-    <input type="number" id="rewardCost" placeholder="Стоимость (лапки)" />
-    <button onclick="addReward()">Добавить</button>
+    <div class="section">
+      <h2>🎁 Новая награда</h2>
+      <input type="text" id="rewardName" placeholder="Название награды" />
+      <input type="text" id="rewardDesc" placeholder="Описание" />
+      <input type="number" id="rewardCost" placeholder="Стоимость (лапки)" />
+      <button onclick="addReward()">Добавить</button>
+    </div>
 
-    <h2 style="margin-top:30px;">🏪 Магазин наград</h2>
-    <div id="rewardList"></div>
+    <div class="section" id="rewardListSection">
+      <h2>🏪 Магазин наград</h2>
+      <div id="rewardList"></div>
+    </div>
   </div>
 
   <div class="section" id="completed">
@@ -175,238 +213,193 @@
     <div id="claimedList"></div>
   </div>
 
-<script>
-  let points = parseInt(localStorage.getItem('pawPoints') || '0');
-  let quests = JSON.parse(localStorage.getItem('pawQuests') || '[]');
-  let completed = JSON.parse(localStorage.getItem('pawCompleted') || '[]');
-  let rewards = JSON.parse(localStorage.getItem('pawRewards') || '[]');
-  let claimed = JSON.parse(localStorage.getItem('pawClaimed') || '[]');
+  <script>
+    let points = parseInt(localStorage.getItem('pawPoints') || '0');
+    let quests = JSON.parse(localStorage.getItem('pawQuests') || '[]');
+    let completed = JSON.parse(localStorage.getItem('pawCompleted') || '[]');
+    let rewards = JSON.parse(localStorage.getItem('pawRewards') || '[]');
+    let claimed = JSON.parse(localStorage.getItem('pawClaimed') || '[]');
 
-  function saveAll() {
-    localStorage.setItem('pawPoints', points);
-    localStorage.setItem('pawQuests', JSON.stringify(quests));
-    localStorage.setItem('pawCompleted', JSON.stringify(completed));
-    localStorage.setItem('pawRewards', JSON.stringify(rewards));
-    localStorage.setItem('pawClaimed', JSON.stringify(claimed));
-  }
-
-  function updatePoints() {
-    document.getElementById('points').innerText = points;
-    saveAll();
-  }
-
-  // Авто-сброс ежедневных и еженедельных заданий по дате
-  function autoResetTasks() {
-    const today = new Date().toDateString();
-    const lastReset = localStorage.getItem('pawResetDate');
-    if (lastReset === today) return;
-    quests = quests.filter(q => q.type !== 'daily' && q.type !== 'weekly');
-    localStorage.setItem('pawResetDate', today);
-    saveAll();
-    renderQuests();
-  }
-
-  function addTask() {
-    const type = document.getElementById('questType').value;
-    const name = document.getElementById('taskName').value.trim();
-    const desc = document.getElementById('taskDesc').value.trim();
-    const pts = parseInt(document.getElementById('taskPoints').value);
-    if (!name || isNaN(pts) || pts <= 0) {
-      alert('Пожалуйста, введите корректные данные для задания.');
-      return;
+    function saveAll() {
+      localStorage.setItem('pawPoints', points);
+      localStorage.setItem('pawQuests', JSON.stringify(quests));
+      localStorage.setItem('pawCompleted', JSON.stringify(completed));
+      localStorage.setItem('pawRewards', JSON.stringify(rewards));
+      localStorage.setItem('pawClaimed', JSON.stringify(claimed));
     }
 
-    const createdAt = new Date().toISOString();
-    quests.push({ type, name, desc, pts, createdAt });
-    clearTaskInputs();
-    renderQuests();
-  }
+    function updatePoints() {
+      document.getElementById('points').innerText = points;
+      saveAll();
+    }
 
-  function clearTaskInputs() {
-    document.getElementById('taskName').value = '';
-    document.getElementById('taskDesc').value = '';
-    document.getElementById('taskPoints').value = '';
-  }
+    function addTask() {
+      const type = document.getElementById('questType').value;
+      const name = document.getElementById('taskName').value.trim();
+      const desc = document.getElementById('taskDesc').value.trim();
+      const pts = parseInt(document.getElementById('taskPoints').value);
+      if (!name || isNaN(pts)) return alert('Пожалуйста, введите корректные данные для задания.');
 
-  function completeTask(index) {
-    if (index < 0 || index >= quests.length) return;
-    points += quests[index].pts;
-    completed.push({ ...quests[index], doneAt: new Date().toISOString() });
-    quests.splice(index, 1);
-    updatePoints();
-    renderQuests();
-    renderCompleted();
-  }
+      const createdAt = new Date().toISOString();
+      quests.push({ type, name, desc, pts, createdAt });
+      renderQuests();
 
-  function deleteTask(index) {
-    if (index < 0 || index >= quests.length) return;
-    if (confirm('Удалить задание?')) {
+      document.getElementById('taskName').value = '';
+      document.getElementById('taskDesc').value = '';
+      document.getElementById('taskPoints').value = '';
+      saveAll();
+    }
+
+    function completeTask(index) {
+      const q = quests[index];
+      points += q.pts;
+      completed.push({ ...q, completedAt: new Date().toISOString() });
       quests.splice(index, 1);
       renderQuests();
+      renderCompleted();
+      updatePoints();
     }
-  }
 
-  function renderQuests() {
-    const container = document.getElementById('questLists');
-    container.innerHTML = '';
+    function deleteQuest(index) {
+      if (confirm('Удалить задание?')) {
+        quests.splice(index, 1);
+        renderQuests();
+        saveAll();
+      }
+    }
 
-    const grouped = { daily: [], weekly: [], event: [] };
-    quests.forEach((q, i) => grouped[q.type].push({ ...q, index: i }));
-
-    for (const type of ['daily', 'weekly', 'event']) {
-      if (grouped[type].length === 0) continue;
-      const section = document.createElement('div');
-      section.innerHTML = `<h3>${type === 'daily' ? 'Ежедневные' : type === 'weekly' ? 'Еженедельные' : 'События'}</h3>`;
-      grouped[type].forEach(q => {
-        const card = document.createElement('div');
-        card.className = `card ${type}`;
-        card.innerHTML = `
-          <div class="flex">
-            <div>
-              <strong>${q.name}</strong>
-              <div class="desc">${q.desc}</div>
-              <small>Награда: ${q.pts} лапок</small>
+    function renderQuests() {
+      const container = document.getElementById('questLists');
+      container.innerHTML = '';
+      ['daily', 'weekly', 'event'].forEach((type) => {
+        const filtered = quests.filter(q => q.type === type);
+        if (filtered.length === 0) return;
+        const h = document.createElement('h3');
+        h.textContent = type === 'daily' ? 'Ежедневные' : type === 'weekly' ? 'Еженедельные' : 'События';
+        container.appendChild(h);
+        filtered.forEach((q, i) => {
+          const globalIndex = quests.indexOf(q);
+          const card = document.createElement('div');
+          card.className = 'card ' + type;
+          card.innerHTML = `
+            <div class="flex">
+              <div>
+                <b>${q.name}</b> <span>(${q.pts} лапок)</span>
+                <p class="desc">${q.desc || ''}</p>
+              </div>
+              <div>
+                <button onclick="completeTask(${globalIndex})" title="Выполнить">✔️</button>
+                <button onclick="deleteQuest(${globalIndex})" title="Удалить">❌</button>
+              </div>
             </div>
-            <div style="display:flex; flex-direction: column; gap: 4px;">
-              <button onclick="completeTask(${q.index})">✔ Выполнить</button>
-              <button onclick="deleteTask(${q.index})" style="background:#f66;">🗑</button>
-            </div>
-          </div>`;
-        section.appendChild(card);
+          `;
+          container.appendChild(card);
+        });
       });
-      container.appendChild(section);
+      saveAll();
     }
-    saveAll();
-  }
 
-  // Rewards
-  function addReward() {
-    const name = document.getElementById('rewardName').value.trim();
-    const desc = document.getElementById('rewardDesc').value.trim();
-    const cost = parseInt(document.getElementById('rewardCost').value);
-    if (!name || isNaN(cost) || cost <= 0) {
-      alert('Введите корректные данные для награды');
-      return;
+    function renderCompleted() {
+      const container = document.getElementById('completedList');
+      container.innerHTML = '';
+      if (completed.length === 0) {
+        container.innerHTML = '<p>Пока нет выполненных заданий.</p>';
+        return;
+      }
+      completed.forEach(q => {
+        const card = document.createElement('div');
+        card.className = 'card daily';
+        card.innerHTML = `
+          <b>${q.name}</b> <span>(${q.pts} лапок)</span>
+          <p class="desc">${q.desc || ''}</p>
+          <small>Выполнено: ${new Date(q.completedAt).toLocaleString()}</small>
+        `;
+        container.appendChild(card);
+      });
     }
-    rewards.push({ name, desc, cost });
-    clearRewardInputs();
-    renderRewards();
-  }
 
-  function clearRewardInputs() {
-    document.getElementById('rewardName').value = '';
-    document.getElementById('rewardDesc').value = '';
-    document.getElementById('rewardCost').value = '';
-  }
-
-  function claimReward(index) {
-    if (index < 0 || index >= rewards.length) return;
-    const r = rewards[index];
-    if (points < r.cost) {
-      alert('Недостаточно лапок!');
-      return;
-    }
-    points -= r.cost;
-    claimed.push({ ...r, claimedAt: new Date().toISOString(), done: false });
-    updatePoints();
-    renderRewards();
-    renderClaimed();
-  }
-
-  function deleteReward(index) {
-    if (index < 0 || index >= rewards.length) return;
-    if (confirm('Удалить награду?')) {
-      rewards.splice(index, 1);
+    function addReward() {
+      const name = document.getElementById('rewardName').value.trim();
+      const desc = document.getElementById('rewardDesc').value.trim();
+      const cost = parseInt(document.getElementById('rewardCost').value);
+      if (!name || isNaN(cost)) return alert('Пожалуйста, введите корректные данные для награды.');
+      rewards.push({ name, desc, cost });
       renderRewards();
+
+      document.getElementById('rewardName').value = '';
+      document.getElementById('rewardDesc').value = '';
+      document.getElementById('rewardCost').value = '';
+      saveAll();
     }
-  }
 
-  function renderRewards() {
-    const list = document.getElementById('rewardList');
-    list.innerHTML = '';
-    rewards.forEach((r, i) => {
-      const card = document.createElement('div');
-      card.className = 'card';
-      card.innerHTML = `
-        <div class="flex">
-          <div>
-            <strong>${r.name}</strong>
-            <div class="desc">${r.desc}</div>
-          </div>
-          <div style="display:flex; flex-direction: column; gap: 6px; min-width: 100px;">
-            <button onclick="claimReward(${i})" ${points < r.cost ? 'disabled' : ''}>-${r.cost} 🐾</button>
-            <button onclick="deleteReward(${i})" style="background:#f66;">🗑</button>
-          </div>
-        </div>`;
-      list.appendChild(card);
-    });
-    saveAll();
-  }
-
-  // Completed tasks
-  function renderCompleted() {
-    const list = document.getElementById('completedList');
-    list.innerHTML = completed.length ? completed.map((q, i) => `
-      <div class="card ${q.type}">
-        <strong>${q.name}</strong> <small>(Выполнено ${new Date(q.doneAt).toLocaleDateString()})</small>
-        <div class="desc">${q.desc}</div>
-      </div>
-    `).join('') : '<p>Пока нет выполненных заданий</p>';
-  }
-
-  // Claimed rewards
-  function markRewardDone(index) {
-    if (index < 0 || index >= claimed.length) return;
-    claimed[index].done = true;
-    renderClaimed();
-  }
-
-  function renderClaimed() {
-    const list = document.getElementById('claimedList');
-    if (!claimed.length) {
-      list.innerHTML = '<p>Пока нет приобретённых наград</p>';
-      return;
+    function renderRewards() {
+      const container = document.getElementById('rewardList');
+      container.innerHTML = '';
+      if (rewards.length === 0) {
+        container.innerHTML = '<p>Пока нет наград в магазине.</p>';
+        return;
+      }
+      rewards.forEach((r, i) => {
+        const card = document.createElement('div');
+        card.className = 'card event';
+        card.innerHTML = `
+          <b>${r.name}</b> <span>(${r.cost} лапок)</span>
+          <p class="desc">${r.desc || ''}</p>
+          <button onclick="claimReward(${i})" ${points < r.cost ? 'disabled style="opacity:0.6;cursor:not-allowed"' : ''}>Купить</button>
+        `;
+        container.appendChild(card);
+      });
     }
-    list.innerHTML = claimed.map((r, i) => `
-      <div class="card">
-        <div class="flex">
-          <div>
-            <strong>${r.name}</strong>
-            <div class="desc">${r.desc}<br>
-              <small>Приобретено: ${new Date(r.claimedAt).toLocaleDateString()}</small>
-            </div>
-          </div>
-          <div>
-            <button onclick="markRewardDone(${i})" ${r.done ? 'disabled' : ''}>${r.done ? 'Выполнено' : 'Отметить выполненным'}</button>
-          </div>
-        </div>
-      </div>
-    `).join('');
-    saveAll();
-  }
 
-  // Навигация и плавный скролл + подсветка активного раздела
-  const navLinks = document.querySelectorAll('.bottom-nav a');
-  navLinks.forEach(link => {
-    link.addEventListener('click', () => {
-      navLinks.forEach(l => l.classList.remove('active'));
-      link.classList.add('active');
+    function claimReward(index) {
+      const r = rewards[index];
+      if (points < r.cost) return alert('Недостаточно лапок для покупки.');
+      points -= r.cost;
+      claimed.push({ ...r, claimedAt: new Date().toISOString() });
+      renderClaimed();
+      updatePoints();
+      renderRewards();
+      saveAll();
+    }
+
+    function renderClaimed() {
+      const container = document.getElementById('claimedList');
+      container.innerHTML = '';
+      if (claimed.length === 0) {
+        container.innerHTML = '<p>Пока нет приобретенных наград.</p>';
+        return;
+      }
+      claimed.forEach(r => {
+        const card = document.createElement('div');
+        card.className = 'card weekly';
+        card.innerHTML = `
+          <b>${r.name}</b>
+          <p class="desc">${r.desc || ''}</p>
+          <small>Куплено: ${new Date(r.claimedAt).toLocaleString()}</small>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function init() {
+      updatePoints();
+      renderQuests();
+      renderCompleted();
+      renderRewards();
+      renderClaimed();
+      document.getElementById('loader').style.display = 'none';
+    }
+
+    window.onload = init;
+
+    // Навигация по якорям, чтобы менять активный класс
+    const navLinks = document.querySelectorAll('.bottom-nav a');
+    navLinks.forEach(link => {
+      link.addEventListener('click', () => {
+        navLinks.forEach(l => l.classList.remove('active'));
+        link.classList.add('active');
+      });
     });
-  });
-
-  // Инициализация
-  function init() {
-    autoResetTasks();
-    updatePoints();
-    renderQuests();
-    renderCompleted();
-    renderRewards();
-    renderClaimed();
-    document.getElementById('loader').style.display = 'none';
-  }
-
-  window.onload = init;
-
-</script>
+  </script>
 </body>
 </html>
