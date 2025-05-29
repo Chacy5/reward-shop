@@ -1,7 +1,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
-import { getFirestore, doc, setDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
+import { getFirestore, doc, setDoc, onSnapshot, getDoc } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
 
-// Firebase config
+// === Firebase Config ===
 const firebaseConfig = {
   apiKey: "AIzaSyBDHjCE7CYC_jxL7EPjUApVvrd8avHmcNA",
   authDomain: "talk-to-my-paw.firebaseapp.com",
@@ -14,6 +14,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
+// === State ===
 let currentUser = localStorage.getItem('pawCurrentUser') || "";
 let groupId = "demo-family";
 let allData = {
@@ -24,55 +25,62 @@ let allData = {
   claimed: [],
   points: {}
 };
+let isInitialSync = true;
 
-// Firestore sync
+// === Firestore Sync ===
 function syncToFirebase() {
   setDoc(doc(db, "groups", groupId), allData);
 }
 function listenFromFirebase() {
   onSnapshot(doc(db, "groups", groupId), (docSnap) => {
     if (docSnap.exists()) {
+      // Не трём local user, если local user не пустой и не совпадает с currentUser после выхода
+      const prevUser = currentUser;
       Object.assign(allData, docSnap.data());
+      // Если это первый запуск, добавим демо-данные только если база пуста
+      if (isInitialSync && Object.keys(allData.users).length === 0 && allData.quests.length === 0 && allData.rewards.length === 0) {
+        addDemoData();
+      }
+      isInitialSync = false;
+      // Авто-восстановление пользователя, если он был залогинен
+      if (prevUser && allData.users[prevUser]) {
+        currentUser = prevUser;
+        localStorage.setItem('pawCurrentUser', currentUser);
+      }
       renderAll();
     }
   });
 }
 listenFromFirebase();
 
-// Demo data
+// === Примеры при первом запуске ===
 function addDemoData() {
-  if (
-    (!allData.quests || allData.quests.length === 0) &&
-    (!allData.rewards || allData.rewards.length === 0) &&
-    (!allData.completed || allData.completed.length === 0) &&
-    (!allData.claimed || allData.claimed.length === 0)
-  ) {
-    allData.quests = [
-      { type: 'daily', name: 'Feed the cat', emoji: '🧑‍🍳', desc: 'Give breakfast to your cat', pts: 3, createdAt: new Date().toISOString() },
-      { type: 'daily', name: 'Morning walk', emoji: '🚶‍♂️', desc: '10 min walk in the park', pts: 2, createdAt: new Date().toISOString() },
-      { type: 'weekly', name: 'Clean up room', emoji: '🧹', desc: 'Tidy up your room on Saturday', pts: 5, createdAt: new Date().toISOString() },
-      { type: 'weekly', name: 'Call grandma', emoji: '☎️', desc: 'Check in on your grandma', pts: 4, createdAt: new Date().toISOString() },
-      { type: 'event', name: 'Birthday surprise', emoji: '🎉', desc: 'Organize a surprise for a friend', pts: 10, createdAt: new Date().toISOString() },
-    ];
-    allData.completed = [
-      { username: "demo", type: 'daily', name: 'Brush teeth', emoji: '🦷', desc: 'Morning and evening', pts: 1, createdAt: new Date().toISOString(), completedAt: new Date(Date.now() - 86400000).toISOString() }
-    ];
-    allData.rewards = [
-      { name: 'Chocolate bar', emoji: '🍫', desc: 'Sweet treat', cost: 6 },
-      { name: 'Coffee break', emoji: '☕', desc: 'Buy yourself a nice coffee', cost: 8 },
-      { name: 'Movie night', emoji: '🎬', desc: 'Watch a movie with popcorn', cost: 14 },
-      { name: 'Game hour', emoji: '🎮', desc: 'Play your favorite game for 1 hour', cost: 10 },
-      { name: 'Cute sticker', emoji: '🧸', desc: 'Get a cute sticker for your notebook', cost: 2 },
-    ];
-    allData.claimed = [
-      { username: "demo", name: 'Donut', emoji: '🍩', desc: 'Yummy donut', cost: 5, claimedAt: new Date(Date.now() - 3600 * 1000 * 6).toISOString(), done: true }
-    ];
-    allData.points = { demo: 11 };
-    syncToFirebase();
-  }
+  allData.quests = [
+    { type: 'daily', name: 'Feed the cat', emoji: '🧑‍🍳', desc: 'Give breakfast to your cat', pts: 3, createdAt: new Date().toISOString() },
+    { type: 'daily', name: 'Morning walk', emoji: '🚶‍♂️', desc: '10 min walk in the park', pts: 2, createdAt: new Date().toISOString() },
+    { type: 'weekly', name: 'Clean up room', emoji: '🧹', desc: 'Tidy up your room on Saturday', pts: 5, createdAt: new Date().toISOString() },
+    { type: 'weekly', name: 'Call grandma', emoji: '☎️', desc: 'Check in on your grandma', pts: 4, createdAt: new Date().toISOString() },
+    { type: 'event', name: 'Birthday surprise', emoji: '🎉', desc: 'Organize a surprise for a friend', pts: 10, createdAt: new Date().toISOString() },
+  ];
+  allData.completed = [
+    { username: "demo", type: 'daily', name: 'Brush teeth', emoji: '🦷', desc: 'Morning and evening', pts: 1, createdAt: new Date().toISOString(), completedAt: new Date(Date.now() - 86400000).toISOString() }
+  ];
+  allData.rewards = [
+    { name: 'Chocolate bar', emoji: '🍫', desc: 'Sweet treat', cost: 6 },
+    { name: 'Coffee break', emoji: '☕', desc: 'Buy yourself a nice coffee', cost: 8 },
+    { name: 'Movie night', emoji: '🎬', desc: 'Watch a movie with popcorn', cost: 14 },
+    { name: 'Game hour', emoji: '🎮', desc: 'Play your favorite game for 1 hour', cost: 10 },
+    { name: 'Cute sticker', emoji: '🧸', desc: 'Get a cute sticker for your notebook', cost: 2 },
+  ];
+  allData.claimed = [
+    { username: "demo", name: 'Donut', emoji: '🍩', desc: 'Yummy donut', cost: 5, claimedAt: new Date(Date.now() - 3600 * 1000 * 6).toISOString(), done: true }
+  ];
+  allData.points = { demo: 11 };
+  allData.users.demo = { password: "demo", role: "user" };
+  syncToFirebase();
 }
 
-// User
+// === User ===
 function setUser(login) {
   currentUser = login;
   localStorage.setItem('pawCurrentUser', login);
@@ -81,7 +89,6 @@ function setUser(login) {
     allData.points[login] = 0;
     syncToFirebase();
   }
-  addDemoData();
   renderAll();
 }
 function updateUserUI() {
@@ -103,7 +110,7 @@ function userRole() {
   return (allData.users[currentUser] && allData.users[currentUser].role) || "user";
 }
 
-// Modals
+// === Модальные окна ===
 window.showLogin = function showLogin() {
   closeAllModals();
   document.getElementById('login-modal-bg').style.display = 'flex';
@@ -154,7 +161,7 @@ window.addEventListener('keydown', function(e) {
   if (e.key === "Escape") closeAllModals();
 });
 
-// Auth
+// === Auth ===
 window.doLogin = function doLogin() {
   let login = document.getElementById('login-username').value.trim();
   let pass = document.getElementById('login-password').value.trim();
@@ -177,12 +184,12 @@ window.doRegister = function doRegister() {
   renderAll();
 }
 window.signOut = function signOut() {
-  setUser('');
-  updateUserUI();
+  localStorage.removeItem('pawCurrentUser');
+  currentUser = "";
   renderAll();
 }
 
-// Main
+// === Главная ===
 function renderMain() {
   let pts = allData.points[currentUser] || 0;
   document.getElementById('page-main').innerHTML = `
@@ -224,7 +231,7 @@ function renderMain() {
   renderStats();
 }
 
-// Quests
+// === Квесты ===
 function renderQuests() {
   const page = document.getElementById('page-tasks');
   page.innerHTML = `
@@ -293,7 +300,7 @@ function renderCompleted() {
   page.appendChild(completedSection);
 }
 
-// Rewards
+// === Награды и Магазин ===
 function renderShop() {
   const pts = allData.points[currentUser] || 0;
   const page = document.getElementById('page-shop');
@@ -331,7 +338,7 @@ function renderShop() {
   page.appendChild(section);
 }
 
-// Claimed
+// === Полученные награды ===
 function renderClaimed() {
   const page = document.getElementById('page-claimed');
   page.innerHTML = `
@@ -370,7 +377,7 @@ function renderClaimed() {
   page.appendChild(section);
 }
 
-// Settings
+// === Настройки ===
 function renderSettings() {
   const role = userRole();
   document.getElementById('page-settings').innerHTML = `
@@ -397,6 +404,7 @@ function renderSettings() {
       <h3>About</h3>
       <div style="color:#065f54;">Talk to my paw — локальное приложение для квестов и наград 🐾</div>
     </div>
+    <button class="logout-btn" onclick="signOut()">Выйти из аккаунта</button>
   `;
 }
 window.switchRole = function switchRole(role) {
@@ -417,7 +425,7 @@ window.resetAllData = function resetAllData() {
   }
 }
 
-// CRUD
+// === CRUD ===
 window.addTask = function addTask() {
   if (userRole() !== 'admin') return;
   const type = document.getElementById('questType').value;
@@ -429,6 +437,7 @@ window.addTask = function addTask() {
   const createdAt = new Date().toISOString();
   allData.quests.push({ type, name, emoji, desc, pts, createdAt });
   syncToFirebase();
+  renderAll();
 };
 window.addReward = function addReward() {
   if (userRole() !== 'admin') return;
@@ -439,6 +448,7 @@ window.addReward = function addReward() {
   if (!name || isNaN(cost)) return alert('Please enter valid reward data.');
   allData.rewards.push({ name, emoji, desc, cost });
   syncToFirebase();
+  renderAll();
 };
 window.completeTask = function completeTask(index) {
   if (userRole() !== 'user') return;
@@ -447,12 +457,14 @@ window.completeTask = function completeTask(index) {
   allData.completed.push({ ...q, completedAt: new Date().toISOString(), username: currentUser });
   allData.quests.splice(index, 1);
   syncToFirebase();
+  renderAll();
 };
 window.deleteQuest = function deleteQuest(index) {
   if (userRole() !== 'admin') return;
   if (confirm('Delete this quest?')) {
     allData.quests.splice(index, 1);
     syncToFirebase();
+    renderAll();
   }
 };
 window.claimReward = function claimReward(index) {
@@ -462,6 +474,7 @@ window.claimReward = function claimReward(index) {
   allData.points[currentUser] -= r.cost;
   allData.claimed.push({ ...r, claimedAt: new Date().toISOString(), done: false, username: currentUser });
   syncToFirebase();
+  renderAll();
 };
 window.markRewardDone = function markRewardDone(index) {
   if (userRole() !== 'admin') return;
@@ -469,6 +482,7 @@ window.markRewardDone = function markRewardDone(index) {
   if (!userClaimed[index].done) {
     userClaimed[index].done = true;
     syncToFirebase();
+    renderAll();
   }
 };
 window.deleteReward = function deleteReward(index) {
@@ -476,6 +490,7 @@ window.deleteReward = function deleteReward(index) {
   if (confirm('Delete this reward?')) {
     allData.rewards.splice(index, 1);
     syncToFirebase();
+    renderAll();
   }
 };
 window.changeRewardAmount = function changeRewardAmount(index) {
@@ -484,10 +499,11 @@ window.changeRewardAmount = function changeRewardAmount(index) {
   if (val !== null && !isNaN(parseInt(val))) {
     allData.rewards[index].cost = parseInt(val);
     syncToFirebase();
+    renderAll();
   }
 };
 
-// Stats
+// === Статистика ===
 function renderStats() {
   const today = new Date().toDateString();
   const week = new Date();
@@ -502,7 +518,7 @@ function renderStats() {
   document.querySelectorAll('#points').forEach(el => el.innerText = allData.points[currentUser] || 0);
 }
 
-// Navigation
+// === Навигация ===
 const pages = document.querySelectorAll('.page');
 const navLinks = document.querySelectorAll('nav.bottom a');
 navLinks.forEach(link => {
@@ -516,7 +532,7 @@ navLinks.forEach(link => {
   });
 });
 
-// Render all
+// === Рендерить всё ===
 function renderAll(page) {
   updateUserUI();
   if (!currentUser) {
@@ -537,7 +553,7 @@ function renderAll(page) {
   renderStats();
 }
 
-// On load
+// === On load ===
 window.addEventListener('DOMContentLoaded', () => {
   if (currentUser && !allData.users[currentUser]) {
     setUser(currentUser);
