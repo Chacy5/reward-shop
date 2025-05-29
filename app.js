@@ -1,7 +1,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
-import { getFirestore, doc, setDoc, getDoc, onSnapshot, updateDoc } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
+import { getFirestore, doc, setDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
 
-// --- FIREBASE CONFIG ---
+// Firebase config
 const firebaseConfig = {
   apiKey: "AIzaSyBDHjCE7CYC_jxL7EPjUApVvrd8avHmcNA",
   authDomain: "talk-to-my-paw.firebaseapp.com",
@@ -14,11 +14,10 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// ========== ONLINE SYNC STRUCTURES ==========
-let currentUser = localStorage.getItem('pawCurrentUser') || '';
-let groupId = "demo-family"; // можно сделать индивидуально для каждой семьи/команды
+let currentUser = localStorage.getItem('pawCurrentUser') || "";
+let groupId = "demo-family";
 let allData = {
-  users: {}, // { [username]: { role, password } }
+  users: {},
   quests: [],
   completed: [],
   rewards: [],
@@ -26,7 +25,7 @@ let allData = {
   points: {}
 };
 
-// ========== FIRESTORE SYNC ==========
+// Firestore sync
 function syncToFirebase() {
   setDoc(doc(db, "groups", groupId), allData);
 }
@@ -40,7 +39,7 @@ function listenFromFirebase() {
 }
 listenFromFirebase();
 
-// ========== DEMO EXAMPLES ==========
+// Demo data
 function addDemoData() {
   if (
     (!allData.quests || allData.quests.length === 0) &&
@@ -73,7 +72,7 @@ function addDemoData() {
   }
 }
 
-// ========== USER LOAD/UPDATE ==========
+// User
 function setUser(login) {
   currentUser = login;
   localStorage.setItem('pawCurrentUser', login);
@@ -104,35 +103,35 @@ function userRole() {
   return (allData.users[currentUser] && allData.users[currentUser].role) || "user";
 }
 
-// ========== MODALS ==========
-function showLogin() {
+// Modals
+window.showLogin = function showLogin() {
   closeAllModals();
   document.getElementById('login-modal-bg').style.display = 'flex';
   document.getElementById('login-username').focus();
   document.getElementById('login-err').textContent = '';
 }
-function closeLoginModal() { document.getElementById('login-modal-bg').style.display = 'none'; }
-function showRegister() {
+window.closeLoginModal = function closeLoginModal() { document.getElementById('login-modal-bg').style.display = 'none'; }
+window.showRegister = function showRegister() {
   closeAllModals();
   document.getElementById('register-modal-bg').style.display = 'flex';
   document.getElementById('register-username').focus();
   document.getElementById('register-err').textContent = '';
 }
-function closeRegisterModal() { document.getElementById('register-modal-bg').style.display = 'none'; }
-function showQuestModal() {
+window.closeRegisterModal = function closeRegisterModal() { document.getElementById('register-modal-bg').style.display = 'none'; }
+window.showQuestModal = function showQuestModal() {
   if (userRole() !== 'admin') return;
   closeAllModals();
   document.getElementById('quest-modal-bg').style.display = 'flex';
   setTimeout(() => { document.getElementById('taskName').focus(); }, 90);
 }
-function closeQuestModal() { document.getElementById('quest-modal-bg').style.display = 'none'; }
-function showRewardModal() {
+window.closeQuestModal = function closeQuestModal() { document.getElementById('quest-modal-bg').style.display = 'none'; }
+window.showRewardModal = function showRewardModal() {
   if (userRole() !== 'admin') return;
   closeAllModals();
   document.getElementById('reward-modal-bg').style.display = 'flex';
   setTimeout(() => { document.getElementById('rewardName').focus(); }, 90);
 }
-function closeRewardModal() { document.getElementById('reward-modal-bg').style.display = 'none'; }
+window.closeRewardModal = function closeRewardModal() { document.getElementById('reward-modal-bg').style.display = 'none'; }
 function closeAllModals() {
   ['login-modal-bg','register-modal-bg','quest-modal-bg','reward-modal-bg'].forEach(id => {
     let el = document.getElementById(id);
@@ -155,7 +154,7 @@ window.addEventListener('keydown', function(e) {
   if (e.key === "Escape") closeAllModals();
 });
 
-// ========== AUTH LOGIC ==========
+// Auth
 window.doLogin = function doLogin() {
   let login = document.getElementById('login-username').value.trim();
   let pass = document.getElementById('login-password').value.trim();
@@ -183,7 +182,7 @@ window.signOut = function signOut() {
   renderAll();
 }
 
-// ========== MAIN PAGE ==========
+// Main
 function renderMain() {
   let pts = allData.points[currentUser] || 0;
   document.getElementById('page-main').innerHTML = `
@@ -225,7 +224,7 @@ function renderMain() {
   renderStats();
 }
 
-// ========== QUESTS ==========
+// Quests
 function renderQuests() {
   const page = document.getElementById('page-tasks');
   page.innerHTML = `
@@ -294,7 +293,7 @@ function renderCompleted() {
   page.appendChild(completedSection);
 }
 
-// ========== REWARDS ==========
+// Rewards
 function renderShop() {
   const pts = allData.points[currentUser] || 0;
   const page = document.getElementById('page-shop');
@@ -332,7 +331,7 @@ function renderShop() {
   page.appendChild(section);
 }
 
-// ========== CLAIMED ==========
+// Claimed
 function renderClaimed() {
   const page = document.getElementById('page-claimed');
   page.innerHTML = `
@@ -371,7 +370,7 @@ function renderClaimed() {
   page.appendChild(section);
 }
 
-// ========== SETTINGS ==========
+// Settings
 function renderSettings() {
   const role = userRole();
   document.getElementById('page-settings').innerHTML = `
@@ -418,7 +417,7 @@ window.resetAllData = function resetAllData() {
   }
 }
 
-// ========== CRUD ==========
+// CRUD
 window.addTask = function addTask() {
   if (userRole() !== 'admin') return;
   const type = document.getElementById('questType').value;
@@ -429,7 +428,7 @@ window.addTask = function addTask() {
   if (!name || isNaN(pts)) return alert('Please enter valid quest data.');
   const createdAt = new Date().toISOString();
   allData.quests.push({ type, name, emoji, desc, pts, createdAt });
-  syncToFirebase(); renderQuests(); renderStats();
+  syncToFirebase();
 };
 window.addReward = function addReward() {
   if (userRole() !== 'admin') return;
@@ -439,7 +438,7 @@ window.addReward = function addReward() {
   const cost = parseInt(document.getElementById('rewardCost').value);
   if (!name || isNaN(cost)) return alert('Please enter valid reward data.');
   allData.rewards.push({ name, emoji, desc, cost });
-  syncToFirebase(); renderShop();
+  syncToFirebase();
 };
 window.completeTask = function completeTask(index) {
   if (userRole() !== 'user') return;
@@ -448,13 +447,12 @@ window.completeTask = function completeTask(index) {
   allData.completed.push({ ...q, completedAt: new Date().toISOString(), username: currentUser });
   allData.quests.splice(index, 1);
   syncToFirebase();
-  renderQuests(); renderStats();
 };
 window.deleteQuest = function deleteQuest(index) {
   if (userRole() !== 'admin') return;
   if (confirm('Delete this quest?')) {
     allData.quests.splice(index, 1);
-    syncToFirebase(); renderQuests();
+    syncToFirebase();
   }
 };
 window.claimReward = function claimReward(index) {
@@ -464,21 +462,20 @@ window.claimReward = function claimReward(index) {
   allData.points[currentUser] -= r.cost;
   allData.claimed.push({ ...r, claimedAt: new Date().toISOString(), done: false, username: currentUser });
   syncToFirebase();
-  renderClaimed(); renderShop(); renderStats();
 };
 window.markRewardDone = function markRewardDone(index) {
   if (userRole() !== 'admin') return;
   const userClaimed = (allData.claimed||[]).filter(r=>r.username===currentUser);
   if (!userClaimed[index].done) {
     userClaimed[index].done = true;
-    syncToFirebase(); renderClaimed();
+    syncToFirebase();
   }
 };
 window.deleteReward = function deleteReward(index) {
   if (userRole() !== 'admin') return;
   if (confirm('Delete this reward?')) {
     allData.rewards.splice(index, 1);
-    syncToFirebase(); renderShop();
+    syncToFirebase();
   }
 };
 window.changeRewardAmount = function changeRewardAmount(index) {
@@ -486,11 +483,11 @@ window.changeRewardAmount = function changeRewardAmount(index) {
   const val = prompt('Enter new cost (number of paw points):', allData.rewards[index].cost);
   if (val !== null && !isNaN(parseInt(val))) {
     allData.rewards[index].cost = parseInt(val);
-    syncToFirebase(); renderShop();
+    syncToFirebase();
   }
 };
 
-// ========== STATS ==========
+// Stats
 function renderStats() {
   const today = new Date().toDateString();
   const week = new Date();
@@ -505,7 +502,7 @@ function renderStats() {
   document.querySelectorAll('#points').forEach(el => el.innerText = allData.points[currentUser] || 0);
 }
 
-// ========== NAVIGATION ==========
+// Navigation
 const pages = document.querySelectorAll('.page');
 const navLinks = document.querySelectorAll('nav.bottom a');
 navLinks.forEach(link => {
@@ -519,7 +516,7 @@ navLinks.forEach(link => {
   });
 });
 
-// ========== RENDER ALL ==========
+// Render all
 function renderAll(page) {
   updateUserUI();
   if (!currentUser) {
@@ -540,7 +537,7 @@ function renderAll(page) {
   renderStats();
 }
 
-// ========== ON LOAD ==========
+// On load
 window.addEventListener('DOMContentLoaded', () => {
   if (currentUser && !allData.users[currentUser]) {
     setUser(currentUser);
