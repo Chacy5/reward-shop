@@ -78,19 +78,99 @@
     }
 
     nav a {
-      margin-right: 10px;
+      flex: 1;
+      text-align: center;
+      padding: 10px;
       text-decoration: none;
       color: #065f54;
       font-weight: bold;
     }
-  </style>
+  .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: #ffffff;
+      border-top: 1px solid #ccc;
+      display: flex;
+      justify-content: space-around;
+      z-index: 1000;
+    }
+
+    body {
+      padding-bottom: 70px;
+    }
+
+.bottom-nav a.active {
+      background: #e0fff8;
+      border-top: 3px solid #6fedd1;
+    }
+.card {
+      background: #f0fffa;
+      border-left: 6px solid #6fedd1;
+      border-radius: 10px;
+      padding: 12px;
+      margin: 10px 0;
+      opacity: 0;
+      transform: translateY(10px);
+      animation: fadeInUp 0.4s ease forwards;
+    }
+
+    @keyframes fadeInUp {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+button:active {
+      transform: scale(0.97);
+      background-color: #57e1c0;
+      transition: transform 0.1s, background-color 0.2s;
+    }
+
+    .card.fade {
+      animation: fadeInUp 0.4s ease forwards;
+    }
+
+    .card.daily {
+      border-left-color: #6fedd1;
+    }
+
+    .card.weekly {
+      border-left-color: #fdd36a;
+    }
+
+    .card.event {
+      border-left-color: #ff9edb;
+    }
+
+    .loader {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(255,255,255,0.8);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+      font-size: 1.2rem;
+      font-weight: bold;
+      color: #065f54;
+    }
+
+</style>
 </head>
 <body>
-  <nav>
-    <a href="#main">🏠 Главная</a>
-    <a href="#completed">✅ Выполненные</a>
-    <a href="#claimed">🎁 Приобретенные</a>
-  </nav>
+  <div class="loader" id="loader">Загрузка...</div>
+  <nav class="bottom-nav">
+    <a href="#main" id="nav-main">🏠 Главная</a>
+    <a href="#rewardList" id="nav-reward">🏪 Магазин</a>
+    <a href="#completed" id="nav-completed">✅ Задания</a>
+    <a href="#claimed" id="nav-claimed">🎉 Награды</a>
+</nav>
 
   <div class="counter">
     Лапки: <span id="points">0</span>
@@ -154,7 +234,16 @@
       localStorage.setItem('pawClaimed', JSON.stringify(claimed));
     }
 
-    function updatePoints() {
+    function autoResetTasks() {
+  const today = new Date().toDateString();
+  if (localStorage.getItem('pawResetDate') === today) return;
+  quests = quests.filter(q => q.type !== 'daily' && q.type !== 'weekly');
+  localStorage.setItem('pawResetDate', today);
+  saveAll();
+  renderQuests();
+}
+
+function updatePoints() {
       document.getElementById('points').innerText = points;
       saveAll();
     }
@@ -166,14 +255,15 @@
       const pts = parseInt(document.getElementById('taskPoints').value);
       if (!name || isNaN(pts)) return;
 
-      quests.push({ type, name, desc, pts });
+      const createdAt = new Date().toISOString();
+      quests.push({ type, name, desc, pts, createdAt });
       renderQuests();
     }
 
     function completeTask(index) {
       const q = quests[index];
       points += q.pts;
-      completed.push(q);
+      completed.push({ ...q, completedAt: new Date().toISOString() });
       quests.splice(index, 1);
       renderQuests();
       renderCompleted();
@@ -184,7 +274,7 @@
       const r = rewards[index];
       if (points >= r.cost) {
         points -= r.cost;
-        claimed.push({ ...r, done: false });
+        claimed.push({ ...r, done: false, claimedAt: new Date().toISOString() });
         updatePoints();
         renderClaimed();
       }
@@ -205,9 +295,9 @@
           container.innerHTML += `<h3>${title}</h3>`;
           filtered.forEach((q, i) => {
             container.innerHTML += `
-              <div class="card">
+              <div class="card fade ${q.type}">
                 <div class="flex">
-                  <div><strong>${q.name}</strong><div class="desc">${q.desc}</div></div>
+                  <div><strong>${q.name}</strong><div class="desc">${q.desc}<br><small>🗓 ${q.completedAt ? new Date(q.completedAt).toLocaleDateString() : ''}</small></div></div>
                   <button onclick="completeTask(${quests.indexOf(q)})">+${q.pts}</button>
                   <button onclick="editQuest(${quests.indexOf(q)})">✏️</button>
                   <button onclick="deleteQuest(${quests.indexOf(q)})">🗑️</button>
@@ -222,9 +312,9 @@
     function renderCompleted() {
       const list = document.getElementById('completedList');
       list.innerHTML = completed.map(q => `
-        <div class="card">
+        <div class="card fade ${q.type}">
           <strong>${q.name}</strong>
-          <div class="desc">${q.desc}</div>
+          <div class="desc">${q.desc}<br><small>🗓 ${q.completedAt ? new Date(q.completedAt).toLocaleDateString() : ''}</small></div>
         </div>`).join('');
       saveAll();
     }
@@ -234,9 +324,9 @@
       list.innerHTML = '';
       rewards.forEach((r, i) => {
         list.innerHTML += `
-          <div class="card">
+          <div class="card fade ${q.type}">
             <div class="flex">
-              <div><strong>${r.name}</strong><div class="desc">${r.desc}</div></div>
+              <div><strong>${r.name}</strong><div class="desc">${r.desc}<br><small>🛍 ${r.claimedAt ? new Date(r.claimedAt).toLocaleDateString() : ''}</small></div></div>
               <div>
                 <button onclick="claimReward(${i})" ${points < r.cost ? 'disabled' : ''}>-${r.cost}</button>
                 <button onclick="editReward(${i})">✏️</button>
@@ -247,9 +337,9 @@
       });
       saveAll();
     }
-        <div class="card">
+        <div class="card fade ${q.type}">
           <div class="flex">
-            <div><strong>${r.name}</strong><div class="desc">${r.desc}</div></div>
+            <div><strong>${r.name}</strong><div class="desc">${r.desc}<br><small>🛍 ${r.claimedAt ? new Date(r.claimedAt).toLocaleDateString() : ''}</small></div></div>
             <button onclick="claimReward(${i})" ${points < r.cost ? 'disabled' : ''}>-${r.cost}</button>
           </div>
         </div>`).join('');
@@ -273,9 +363,9 @@
 function renderClaimed() {
       const list = document.getElementById('claimedList');
       list.innerHTML = claimed.map((r, i) => `
-        <div class="card">
+        <div class="card fade ${q.type}">
           <div class="flex">
-            <div><strong>${r.name}</strong><div class="desc">${r.desc}</div></div>
+            <div><strong>${r.name}</strong><div class="desc">${r.desc}<br><small>🛍 ${r.claimedAt ? new Date(r.claimedAt).toLocaleDateString() : ''}</small></div></div>
             ${r.done ? '✅' : `<button onclick="markRewardDone(${i})">Выполнено</button>`}
           </div>
         </div>`).join('');
@@ -284,6 +374,29 @@ function renderClaimed() {
 
     updatePoints();
     renderQuests();
+
+    function updateActiveNav() {
+      const sections = ['main', 'rewardList', 'completed', 'claimed'];
+      let active = 'main';
+      for (const id of sections) {
+        const el = document.getElementById(id);
+        const rect = el.getBoundingClientRect();
+        if (rect.top <= 100 && rect.bottom >= 100) {
+          active = id;
+        }
+      }
+      document.querySelectorAll('.bottom-nav a').forEach(a => a.classList.remove('active'));
+      const nav = document.getElementById('nav-' + active.replace('List', ''));
+      if (nav) nav.classList.add('active');
+    }
+
+    document.addEventListener('scroll', updateActiveNav);
+    window.addEventListener('load', () => {
+      autoResetTasks();
+      updateActiveNav();
+      setTimeout(() => document.getElementById('loader').style.display = 'none', 500);
+    });
+    window.addEventListener('resize', updateActiveNav);
     renderCompleted();
     renderRewards();
     renderClaimed();
