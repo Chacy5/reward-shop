@@ -209,6 +209,8 @@
                 <div class="flex">
                   <div><strong>${q.name}</strong><div class="desc">${q.desc}</div></div>
                   <button onclick="completeTask(${quests.indexOf(q)})">+${q.pts}</button>
+                  <button onclick="editQuest(${quests.indexOf(q)})">✏️</button>
+                  <button onclick="deleteQuest(${quests.indexOf(q)})">🗑️</button>
                 </div>
               </div>`;
           });
@@ -229,7 +231,22 @@
 
     function renderRewards() {
       const list = document.getElementById('rewardList');
-      list.innerHTML = rewards.map((r, i) => `
+      list.innerHTML = '';
+      rewards.forEach((r, i) => {
+        list.innerHTML += `
+          <div class="card">
+            <div class="flex">
+              <div><strong>${r.name}</strong><div class="desc">${r.desc}</div></div>
+              <div>
+                <button onclick="claimReward(${i})" ${points < r.cost ? 'disabled' : ''}>-${r.cost}</button>
+                <button onclick="editReward(${i})">✏️</button>
+                <button onclick="deleteReward(${i})">🗑️</button>
+              </div>
+            </div>
+          </div>`;
+      });
+      saveAll();
+    }
         <div class="card">
           <div class="flex">
             <div><strong>${r.name}</strong><div class="desc">${r.desc}</div></div>
@@ -239,7 +256,21 @@
       saveAll();
     }
 
-    function renderClaimed() {
+    function addReward() {
+  const name = document.getElementById('rewardName').value;
+  const desc = document.getElementById('rewardDesc').value;
+  const cost = parseInt(document.getElementById('rewardCost').value);
+  if (!name || !desc || isNaN(cost)) return;
+
+  rewards.push({ name, desc, cost });
+  document.getElementById('rewardName').value = '';
+  document.getElementById('rewardDesc').value = '';
+  document.getElementById('rewardCost').value = '';
+  renderRewards();
+  saveAll();
+}
+
+function renderClaimed() {
       const list = document.getElementById('claimedList');
       list.innerHTML = claimed.map((r, i) => `
         <div class="card">
@@ -256,6 +287,101 @@
     renderCompleted();
     renderRewards();
     renderClaimed();
+
+    window.editReward = function(index) {
+      const newName = prompt("Новое название:", rewards[index].name);
+      const newDesc = prompt("Новое описание:", rewards[index].desc);
+      const newCost = prompt("Новая стоимость:", rewards[index].cost);
+      if (newName && newDesc && !isNaN(parseInt(newCost))) {
+        rewards[index] = {
+          name: newName,
+          desc: newDesc,
+          cost: parseInt(newCost)
+        };
+        renderRewards();
+        saveAll();
+      }
+    };
+
+    window.deleteReward = function(index) {
+      if (confirm("Удалить эту награду?")) {
+        rewards.splice(index, 1);
+        renderRewards();
+        saveAll();
+      }
+    };
+
+    window.editQuest = function(index) {
+      const newName = prompt("Новое название:", quests[index].name);
+      const newDesc = prompt("Новое описание:", quests[index].desc);
+      const newPts = prompt("Новая награда:", quests[index].pts);
+      if (newName && newDesc && !isNaN(parseInt(newPts))) {
+        quests[index].name = newName;
+        quests[index].desc = newDesc;
+        quests[index].pts = parseInt(newPts);
+        renderQuests();
+        saveAll();
+      }
+    };
+
+    window.deleteQuest = function(index) {
+      if (confirm("Удалить это задание?")) {
+        quests.splice(index, 1);
+        renderQuests();
+        saveAll();
+      }
+    };
+
+    window.exportData = function() {
+      const allData = {
+        points, quests, completed, rewards, claimed
+      };
+      const blob = new Blob([JSON.stringify(allData)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = "reward_shop_backup.json";
+      a.click();
+    };
+
+    window.importData = function(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const data = JSON.parse(e.target.result);
+        points = data.points || 0;
+        quests = data.quests || [];
+        completed = data.completed || [];
+        rewards = data.rewards || [];
+        claimed = data.claimed || [];
+        updatePoints();
+        renderQuests();
+        renderCompleted();
+        renderRewards();
+        renderClaimed();
+      };
+      reader.readAsText(file);
+    };
+
+    const importInput = document.createElement('input');
+    importInput.type = 'file';
+    importInput.style.display = 'none';
+    importInput.accept = '.json';
+    importInput.addEventListener('change', importData);
+    document.body.appendChild(importInput);
+
+    const exportBtn = document.createElement('button');
+    exportBtn.textContent = '📤 Экспорт данных';
+    exportBtn.onclick = exportData;
+    exportBtn.style.margin = '10px';
+    document.body.appendChild(exportBtn);
+
+    const importBtn = document.createElement('button');
+    importBtn.textContent = '📥 Импорт данных';
+    importBtn.onclick = () => importInput.click();
+    importBtn.style.margin = '10px';
+    document.body.appendChild(importBtn);
   </script>
 </body>
 </html>
