@@ -4,27 +4,22 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Reward Shop</title>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat+Alternates:wght@400;600&display=swap" rel="stylesheet">
   <style>
     * {
       box-sizing: border-box;
     }
 
     body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      font-family: 'Montserrat Alternates', sans-serif;
       margin: 0;
       padding: 20px;
-      background: #fff9f4;
+      background: #eafff8;
       color: #333;
     }
 
-    h1 {
-      font-size: 1.8rem;
-      margin-bottom: 10px;
-    }
-
-    h2 {
-      font-size: 1.3rem;
-      margin: 16px 0 10px;
+    h1, h2 {
+      color: #065f54;
     }
 
     .section {
@@ -39,11 +34,10 @@
       font-size: 1.5rem;
       font-weight: bold;
       text-align: center;
-      background: #ffecd9;
+      background: #b2fff0;
       padding: 20px;
       border-radius: 16px;
       margin-bottom: 20px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     }
 
     input, button, select {
@@ -56,89 +50,108 @@
     }
 
     button {
-      background: #ffad60;
+      background: #6fedd1;
       color: #fff;
       font-weight: bold;
       border: none;
       cursor: pointer;
     }
 
-    .btn:disabled {
-      background: #ccc;
-    }
-
     .card {
-      background: #fef4eb;
-      border-radius: 12px;
+      background: #f0fffa;
+      border-left: 6px solid #6fedd1;
+      border-radius: 10px;
       padding: 12px;
       margin: 10px 0;
     }
 
-    .category {
-      font-weight: bold;
-      margin-top: 10px;
-    }
-
-    .card .desc {
-      color: #666;
+    .desc {
       font-size: 0.9rem;
+      color: #555;
     }
 
     .flex {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      gap: 8px;
+      gap: 10px;
+    }
+
+    nav a {
+      margin-right: 10px;
+      text-decoration: none;
+      color: #065f54;
+      font-weight: bold;
     }
   </style>
 </head>
 <body>
-  <h1>🐾 Reward Shop</h1>
+  <nav>
+    <a href="#main">🏠 Главная</a>
+    <a href="#completed">✅ Выполненные</a>
+    <a href="#claimed">🎁 Приобретенные</a>
+  </nav>
 
   <div class="counter">
     Лапки: <span id="points">0</span>
   </div>
 
-  <div class="section">
-    <h2>📝 Новое задание</h2>
-    <select id="questType">
-      <option value="daily">Ежедневное</option>
-      <option value="weekly">Еженедельное</option>
-      <option value="event">Событие</option>
-    </select>
-    <input type="text" id="taskName" placeholder="Название задания">
-    <input type="text" id="taskDesc" placeholder="Описание задания">
-    <input type="number" id="taskPoints" placeholder="Награда (лапки)">
-    <button onclick="addTask()">Добавить</button>
+  <div id="main">
+    <div class="section">
+      <h2>📝 Новое задание</h2>
+      <select id="questType">
+        <option value="daily">Ежедневное</option>
+        <option value="weekly">Еженедельное</option>
+        <option value="event">Событие</option>
+      </select>
+      <input type="text" id="taskName" placeholder="Название">
+      <input type="text" id="taskDesc" placeholder="Описание">
+      <input type="number" id="taskPoints" placeholder="Награда (лапки)">
+      <button onclick="addTask()">Добавить</button>
+    </div>
+
+    <div class="section">
+      <h2>📋 Задания</h2>
+      <div id="questLists"></div>
+    </div>
+
+    <div class="section">
+      <h2>🎁 Новая награда</h2>
+      <input type="text" id="rewardName" placeholder="Название награды">
+      <input type="text" id="rewardDesc" placeholder="Описание">
+      <input type="number" id="rewardCost" placeholder="Стоимость (лапки)">
+      <button onclick="addReward()">Добавить</button>
+    </div>
+
+    <div class="section">
+      <h2>🏪 Магазин наград</h2>
+      <div id="rewardList"></div>
+    </div>
   </div>
 
-  <div class="section">
-    <h2>📋 Задания</h2>
-    <div id="questLists"></div>
+  <div class="section" id="completed">
+    <h2>✅ Выполненные задания</h2>
+    <div id="completedList"></div>
   </div>
 
-  <div class="section">
-    <h2>🎁 Новая награда</h2>
-    <input type="text" id="rewardName" placeholder="Название награды">
-    <input type="text" id="rewardDesc" placeholder="Описание">
-    <input type="number" id="rewardCost" placeholder="Стоимость (лапки)">
-    <button onclick="addReward()">Добавить</button>
-  </div>
-
-  <div class="section">
-    <h2>🏪 Магазин наград</h2>
-    <div id="rewardList"></div>
+  <div class="section" id="claimed">
+    <h2>🎉 Приобретенные награды</h2>
+    <div id="claimedList"></div>
   </div>
 
   <script>
     let points = parseInt(localStorage.getItem('pawPoints') || '0');
     let quests = JSON.parse(localStorage.getItem('pawQuests') || '[]');
+    let completed = JSON.parse(localStorage.getItem('pawCompleted') || '[]');
     let rewards = JSON.parse(localStorage.getItem('pawRewards') || '[]');
+    let claimed = JSON.parse(localStorage.getItem('pawClaimed') || '[]');
 
     function saveAll() {
       localStorage.setItem('pawPoints', points);
       localStorage.setItem('pawQuests', JSON.stringify(quests));
+      localStorage.setItem('pawCompleted', JSON.stringify(completed));
       localStorage.setItem('pawRewards', JSON.stringify(rewards));
+      localStorage.setItem('pawClaimed', JSON.stringify(claimed));
     }
 
     function updatePoints() {
@@ -154,28 +167,42 @@
       if (!name || isNaN(pts)) return;
 
       quests.push({ type, name, desc, pts });
-      document.getElementById('taskName').value = '';
-      document.getElementById('taskDesc').value = '';
-      document.getElementById('taskPoints').value = '';
       renderQuests();
     }
 
     function completeTask(index) {
-      points += quests[index].pts;
+      const q = quests[index];
+      points += q.pts;
+      completed.push(q);
       quests.splice(index, 1);
       renderQuests();
+      renderCompleted();
       updatePoints();
+    }
+
+    function claimReward(index) {
+      const r = rewards[index];
+      if (points >= r.cost) {
+        points -= r.cost;
+        claimed.push({ ...r, done: false });
+        updatePoints();
+        renderClaimed();
+      }
+    }
+
+    function markRewardDone(index) {
+      claimed[index].done = true;
+      renderClaimed();
     }
 
     function renderQuests() {
       const container = document.getElementById('questLists');
       container.innerHTML = '';
-      const categories = ['daily', 'weekly', 'event'];
-      const titles = { daily: 'Ежедневные', weekly: 'Еженедельные', event: 'События' };
-      categories.forEach(type => {
+      ['daily','weekly','event'].forEach(type => {
+        const title = { daily: 'Ежедневные', weekly: 'Еженедельные', event: 'События' }[type];
         const filtered = quests.filter(q => q.type === type);
-        if (filtered.length > 0) {
-          container.innerHTML += `<div class='category'>${titles[type]}</div>`;
+        if (filtered.length) {
+          container.innerHTML += `<h3>${title}</h3>`;
           filtered.forEach((q, i) => {
             container.innerHTML += `
               <div class="card">
@@ -190,46 +217,45 @@
       saveAll();
     }
 
-    function addReward() {
-      const name = document.getElementById('rewardName').value;
-      const desc = document.getElementById('rewardDesc').value;
-      const cost = parseInt(document.getElementById('rewardCost').value);
-      if (!name || isNaN(cost)) return;
-
-      rewards.push({ name, desc, cost });
-      document.getElementById('rewardName').value = '';
-      document.getElementById('rewardDesc').value = '';
-      document.getElementById('rewardCost').value = '';
-      renderRewards();
-    }
-
-    function claimReward(index) {
-      if (points >= rewards[index].cost) {
-        points -= rewards[index].cost;
-        alert(`🎁 Получено: ${rewards[index].name}`);
-        updatePoints();
-        renderRewards();
-      }
+    function renderCompleted() {
+      const list = document.getElementById('completedList');
+      list.innerHTML = completed.map(q => `
+        <div class="card">
+          <strong>${q.name}</strong>
+          <div class="desc">${q.desc}</div>
+        </div>`).join('');
+      saveAll();
     }
 
     function renderRewards() {
       const list = document.getElementById('rewardList');
-      list.innerHTML = '';
-      rewards.forEach((r, i) => {
-        list.innerHTML += `
-          <div class="card">
-            <div class="flex">
-              <div><strong>${r.name}</strong><div class="desc">${r.desc}</div></div>
-              <button onclick="claimReward(${i})" ${points < r.cost ? 'disabled' : ''}>-${r.cost}</button>
-            </div>
-          </div>`;
-      });
+      list.innerHTML = rewards.map((r, i) => `
+        <div class="card">
+          <div class="flex">
+            <div><strong>${r.name}</strong><div class="desc">${r.desc}</div></div>
+            <button onclick="claimReward(${i})" ${points < r.cost ? 'disabled' : ''}>-${r.cost}</button>
+          </div>
+        </div>`).join('');
+      saveAll();
+    }
+
+    function renderClaimed() {
+      const list = document.getElementById('claimedList');
+      list.innerHTML = claimed.map((r, i) => `
+        <div class="card">
+          <div class="flex">
+            <div><strong>${r.name}</strong><div class="desc">${r.desc}</div></div>
+            ${r.done ? '✅' : `<button onclick="markRewardDone(${i})">Выполнено</button>`}
+          </div>
+        </div>`).join('');
       saveAll();
     }
 
     updatePoints();
     renderQuests();
+    renderCompleted();
     renderRewards();
+    renderClaimed();
   </script>
 </body>
 </html>
