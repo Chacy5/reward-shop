@@ -1,3 +1,7 @@
+google.accounts.id.initialize({
+  client_id: '86148760521-l4q478qh22c0p0slt70gri9fh8nm93rj.apps.googleusercontent.com',
+  callback: handleGoogleCredentialResponse
+});
 let points = parseInt(localStorage.getItem('pawPoints') || '0');
 let quests = JSON.parse(localStorage.getItem('pawQuests') || '[]');
 let completed = JSON.parse(localStorage.getItem('pawCompleted') || '[]');
