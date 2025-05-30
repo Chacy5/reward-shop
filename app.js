@@ -570,6 +570,234 @@ document.addEventListener('keydown', e => {
   }
 });
 
+// ... все предыдущие функции, переменные
+
+// ====== DEMO MODE ======
+// Проверка: демо ли сейчас
+function isDemo() { return !currentUser || currentUser === DEMO_USER; }
+
+// Демо-данные (обновлены)
+function getDemoData() {
+  return {
+    profile: { username: DEMO_USER, password: "demo", role: "Performer" },
+    points: 100, // 100 лапок на балансе
+    quests: [
+      { id: 1, type: 'daily', name: '🟢 Завершите этот квест', emoji: '🐾', category: "Goal", desc: 'Кликните "Mark done", чтобы выполнить ежедневную задачу', pts: 6, done: false, lastDone: null },
+      { id: 2, type: 'event', name: '🔵 Получите награду', emoji: '🎁', category: "Gift", desc: 'Зайдите в Reward Store, чтобы получить награду за баллы', pts: 5, done: false, lastDone: null },
+      { id: 3, type: 'weekly', name: '🟣 Откройте статистику', emoji: '📊', category: "Growth", desc: 'Посмотрите, как отслеживается прогресс', pts: 4, done: false, lastDone: null }
+    ],
+    completed: [],
+    rewards: [
+      { id: 1, name: '🏆 Мотивация и поддержка', emoji: '🐾', category: "Sweets", desc: 'Игра помогает людям с СДВГ структурировать задачи, получать награды и видеть свой прогресс!', cost: 1, bonus: "Стимулирует регулярность", quantity: 99 },
+      { id: 2, name: '🤝 Улучшение отношений', emoji: '💖', category: "Gift", desc: 'Совместные квесты и награды учат позитивному подкреплению и заботе друг о друге.', cost: 1, bonus: "Дружба и любовь", quantity: 99 },
+      { id: 3, name: '✨ Достижения', emoji: '⭐', category: "Growth", desc: 'Почувствуйте гордость за себя — каждое действие приближает к цели!', cost: 1, bonus: "Видимый рост", quantity: 99 }
+    ],
+    claimed: [],
+    lastDailyReset: 0,
+    lastWeeklyReset: 0,
+    archive: [],
+    categories: [...DEFAULT_CATEGORIES],
+    customEmojis: [],
+  };
+}
+
+// ====== Рендерим главную (демо/авторизация) ======
+function renderHome() {
+  const user = getUserData();
+  const stats = {
+    completed: user.completed.length,
+    claimed: user.claimed.length,
+    balance: user.points
+  };
+  let html = "";
+  if (isDemo()) {
+    html += `
+      <div class="demo-hint">
+        <b>Вы находитесь в демо-режиме!</b><br>
+        <span style="font-size:1.1em;">
+        Это игра для двоих (или одного), где за выполнение квестов вы получаете "лапки" 🐾,
+        которые можно обменять на награды и приятные бонусы.<br><br>
+        Приложение помогает структурировать быт, мотивировать себя и поддерживать друг друга!
+        </span>
+      </div>
+      <button class="demo-big-btn" onclick="showRegisterModal()">Начать играть — Регистрация</button>
+    `;
+    html += `
+      <div class="infograph" style="margin-top:38px;">
+        <div class="infocard">
+          <span class="big">${stats.balance} 🐾</span>
+          Ваш баланс лапок
+        </div>
+        <div class="infocard">
+          <span class="big">3</span>
+          Демо-квеста для знакомства
+        </div>
+        <div class="infocard">
+          <span class="big">3</span>
+          Примерные награды
+        </div>
+      </div>
+      <div style="margin:18px 0 0 0; color:#189d8a; text-align:center;">Зарегистрируйтесь, чтобы открыть весь функционал!</div>
+    `;
+  } else {
+    html += `
+      <div class="greeting">🐾 Добро пожаловать, <b>${user.profile.username}</b>!</div>
+      <div class="infograph">
+        <div class="infocard">
+          <span class="big">${stats.balance} 🐾</span>
+          Баланс лапок
+        </div>
+        <div class="infocard">
+          <span class="big">${stats.completed}</span>
+          Квестов выполнено
+        </div>
+        <div class="infocard">
+          <span class="big">${stats.claimed}</span>
+          Наград получено
+        </div>
+      </div>
+    `;
+  }
+  document.getElementById('page-home').innerHTML = html;
+}
+
+// ====== Рендерим демо-квесты ======
+function renderQuests() {
+  resetDailiesAndWeeklies();
+  const user = getUserData();
+  const isQM = user.profile.role === 'Questmaster';
+  let html = "";
+  if (isDemo()) {
+    html += `<div class="demo-hint">Демо-квесты показывают, как устроено приложение.<br>Попробуйте выполнить их!</div>`;
+  } else if (isQM) {
+    html += `<button class="paw-action-btn" onclick="openQuestModal()">+ Add quest</button>`;
+  }
+  let list = user.quests.filter(q=>!q.done || q.type==="event");
+  if (list.length === 0) html += `<div>No active quests.</div>`;
+  list.forEach((q, i) => {
+    if(q.type!=="event" && q.done) return;
+    html += `
+    <div class="card ${q.type}">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div><span style="font-size:1.5em;">${q.emoji}</span> <b>${q.name}</b></div>
+        <div><span style="font-size:1em;">${q.pts} 🐾</span></div>
+      </div>
+      <div style="margin:4px 0 0 0; font-size:0.97em; color:#35776e;">${q.desc}</div>
+      <div style="font-size:0.92em; color:#888;">${q.type}, ${q.category}</div>
+      <div style="margin-top:6px;">`;
+    if (!isDemo() && isQM) {
+      html += `<button onclick="editQuest(${q.id})">Edit</button>
+               <button onclick="deleteQuest(${q.id})">Delete</button>`;
+    } else if (!q.done) {
+      html += `<button onclick="completeQuest(${q.id})">Mark done</button>`;
+    }
+    html += `</div></div>`;
+  });
+  document.getElementById('page-quests').innerHTML = `<h2>Quests</h2>${html}`;
+}
+
+// ====== Демо-режим: магазин наград ======
+function renderShop() {
+  const user = getUserData();
+  const isQM = user.profile.role === 'Questmaster';
+  let html = "";
+  if (isDemo()) {
+    html += `<div class="demo-hint">В игре награды — это приятные или полезные бонусы, которые можно "покупать" за лапки.<br>
+      Вот несколько идей, почему такая игра может помочь:</div>`;
+  } else if (isQM) {
+    html += `<button class="paw-action-btn" onclick="openRewardModal()">+ Add reward</button>`;
+  }
+  let list = user.rewards || [];
+  if (list.length === 0) html += `<div>No rewards yet.</div>`;
+  list.forEach((r, i) => {
+    html += `
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div><span style="font-size:1.5em;">${r.emoji}</span> <b>${r.name}</b></div>
+        <div><span style="font-size:1em;">${r.cost} 🐾</span></div>
+      </div>
+      <div style="margin:4px 0 0 0; font-size:1.1em; color:#35776e;">${r.desc}</div>
+      <div style="font-size:0.92em; color:#888;">${r.category}</div>
+      <div style="font-size:0.9em; color:#665;">${r.bonus ? 'Bonus: '+r.bonus : ''}</div>
+      <div style="font-size:0.92em;color:#3c7779;">Left: ${r.quantity??'∞'}</div>
+      <div style="margin-top:6px;">`;
+    if (!isDemo() && isQM) {
+      html += `<button onclick="editReward(${r.id})">Edit</button> <button onclick="deleteReward(${r.id})">Delete</button>`;
+    } else if (!isDemo() && (r.quantity??1)>0) {
+      html += `<button onclick="claimReward(${r.id})">Claim</button>`;
+    }
+    html += `</div></div>`;
+  });
+  document.getElementById('page-shop').innerHTML = `<h2>Reward Store</h2>${html}`;
+}
+
+// ====== Демо-режим: настройки ======
+function renderSettings() {
+  let html = "";
+  if (isDemo()) {
+    html += `<div class="demo-hint">Настройки доступны только после регистрации.</div>
+      <div>
+        <button class="demo-disabled" disabled>Switch theme</button>
+        <button class="demo-disabled" disabled>Open archive</button>
+        <button class="demo-disabled" disabled>Edit categories</button>
+        <button class="demo-disabled" disabled>Reset all data</button>
+      </div>`;
+  } else {
+    html += `
+      <div>
+        <button id="theme-switcher">Switch theme</button>
+        <button id="archive-open">Open archive</button>
+        <button id="edit-categories">Edit categories</button>
+        <button id="reset-all-data">Reset all data</button>
+      </div>
+    `;
+  }
+  document.getElementById('page-settings').innerHTML = `<h2>Settings</h2>${html}`;
+}
+
+// ====== Рендерим все ======
+function renderAll() {
+  loadData(); resetDailiesAndWeeklies(); updateUIUser();
+  renderHome();
+  renderQuests();
+  renderShop();
+  renderClaimedRewards();
+  renderStatsPage();
+  renderSettings();
+  // user-menu и остальное как раньше
+  let menu = document.getElementById('user-menu');
+  menu.innerHTML = `
+    <div class="user-menu-item" id="user-menu-edit-profile">Edit profile</div>
+    <div class="user-menu-item" id="user-menu-change-password">Change password</div>
+    <div class="user-menu-item" id="user-menu-statistics">Statistics</div>
+    ${renderUserMenuRoleSwitch()}
+    <div class="user-menu-item" id="user-menu-logout">Logout</div>
+  `;
+  setupRoleSwitch();
+  document.getElementById('user-menu-edit-profile').onclick = function() {
+    openModal(`<h3>Edit Profile</h3>
+      <label>Username <input type="text" value="${getUserData().profile.username}" disabled></label>
+      <button onclick="closeModal()">Close</button>
+    `); closeUserMenu();
+  };
+  document.getElementById('user-menu-change-password').onclick = function() {
+    openModal(`<h3>Change Password</h3>
+      <label>New Password <input type="password"></label>
+      <button onclick="alert('Change not implemented')">Change</button>
+    `); closeUserMenu();
+  };
+  document.getElementById('user-menu-statistics').onclick = function() {
+    showPage('statistics'); closeUserMenu();
+  };
+  document.getElementById('user-menu-logout').onclick = function() {
+    openModal(`<h3>Logout</h3>
+      <p>Are you sure you want to logout?</p>
+      <button onclick="window.logout()">Yes, logout</button>
+      <button onclick="closeModal()">Cancel</button>
+    `); closeUserMenu();
+  };
+}
+
 // ====== On Load ======
 window.onload = function () { loadData(); renderAll(); };
 window.openQuestModal = openQuestModal;
