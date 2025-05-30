@@ -260,6 +260,276 @@ document.addEventListener('keydown', e => {
   }
 });
 
+// ======= CRUD Quests =======
+
+function renderQuests() {
+  const userData = getUserData();
+  const list = userData.quests || [];
+  const completed = userData.completed || [];
+  const isAdmin = userData.profile.role === 'questmaster';
+  let html = "";
+
+  html += `<button class="paw-action-btn" onclick="openQuestModal()">+ Add quest</button>`;
+  html += `<div>`;
+  if (list.length === 0) html += `<div>No quests yet.</div>`;
+  list.forEach((q, i) => {
+    html += `
+    <div class="card ${q.type}">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <span style="font-size:1.5em;">${q.emoji}</span>
+          <b>${q.name}</b>
+        </div>
+        <div>
+          <span style="font-size:1em;">${q.pts} 🐾</span>
+        </div>
+      </div>
+      <div style="margin:4px 0 0 0; font-size:0.97em; color:#35776e;">
+        <span>${q.desc}</span>
+      </div>
+      <div style="font-size:0.92em; color:#888;">${q.type}, ${q.category}</div>
+      <div style="margin-top:6px;">`;
+    if (isAdmin) {
+      html += `<button onclick="editQuest(${i})">Edit</button>
+               <button onclick="deleteQuest(${i})">Delete</button>`;
+    } else {
+      html += `<button onclick="completeQuest(${i})">Mark done</button>`;
+    }
+    html += `</div></div>`;
+  });
+  html += `</div>`;
+
+  // Completed list
+  html += `<h3>Completed today</h3><div>`;
+  const today = new Date();
+  const dayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
+  let todayCompleted = completed.filter(c => c.completedAt >= dayStart);
+  if (todayCompleted.length === 0) html += `<div>No quests completed today.</div>`;
+  todayCompleted.forEach(c =>
+    html += `<div class="card ${c.type}">
+      <span style="font-size:1.4em;">${c.emoji}</span>
+      <span>${c.name}</span>
+      <span style="font-size:0.95em;color:#888;">(${c.type}, ${c.category})</span>
+    </div>`);
+  html += `</div>`;
+
+  document.getElementById('page-quests').innerHTML = `<h2>Quests</h2>${html}`;
+}
+
+// Добавление/редактирование квеста
+window.openQuestModal = function(idx) {
+  const userData = getUserData();
+  let isEdit = (typeof idx === "number");
+  let quest = isEdit ? userData.quests[idx] : { type: 'daily', name: '', emoji: '', category: '', desc: '', pts: 1 };
+  let cats = (userData.categories || []).map(c => `<option>${c.emoji} ${c.name}</option>`).join('');
+  let types = ["daily","weekly","event"].map(t => `<option${quest.type===t?" selected":""}>${t}</option>`).join('');
+  let html = `
+    <h3>${isEdit ? "Edit" : "Add"} Quest</h3>
+    <label>Type <select id="quest-type">${types}</select></label>
+    <label>Name <input id="quest-name" value="${quest.name||""}"></label>
+    <label>Category 
+      <select id="quest-cat">${cats}</select>
+      <button type="button" onclick="openEmojiPickerForCategory()">+ New</button>
+    </label>
+    <label>Emoji <input id="quest-emoji" value="${quest.emoji||""}" maxlength="2"></label>
+    <label>Description <input id="quest-desc" value="${quest.desc||""}"></label>
+    <label>Points <input id="quest-pts" type="number" min="1" value="${quest.pts||1}"></label>
+    <button onclick="${isEdit ? `saveQuest(${idx})` : 'saveQuest()'}">Save</button>
+    <button onclick="closeModal()">Cancel</button>
+  `;
+  openModal(html);
+};
+
+window.saveQuest = function(idx) {
+  const userData = getUserData();
+  let quest = {
+    type: document.getElementById('quest-type').value,
+    name: document.getElementById('quest-name').value,
+    category: document.getElementById('quest-cat').value.replace(/^.*?\s/,''),
+    emoji: document.getElementById('quest-emoji').value,
+    desc: document.getElementById('quest-desc').value,
+    pts: parseInt(document.getElementById('quest-pts').value)
+  };
+  if (!quest.name || !quest.emoji) return alert("Fill all fields");
+  if (typeof idx === "number") userData.quests[idx] = quest;
+  else userData.quests.push(quest);
+  saveData(); closeModal(); renderQuests();
+};
+window.editQuest = function(idx) { openQuestModal(idx); }
+window.deleteQuest = function(idx) {
+  if (!confirm("Delete this quest?")) return;
+  const userData = getUserData();
+  userData.quests.splice(idx, 1);
+  saveData(); renderQuests();
+}
+window.completeQuest = function(idx) {
+  const userData = getUserData();
+  let quest = userData.quests[idx];
+  userData.points += quest.pts;
+  userData.completed.push({...quest, completedAt: Date.now() });
+  saveData();
+  renderQuests(); updateUIUser();
+};
+
+// ======= CRUD Rewards =======
+
+function renderRewards() {
+  const userData = getUserData();
+  const rewards = userData.rewards || [];
+  const claimed = userData.claimed || [];
+  const isAdmin = userData.profile.role === 'questmaster';
+  let html = "";
+
+  html += `<button class="paw-action-btn" onclick="openRewardModal()">+ Add reward</button>`;
+  html += `<div>`;
+  if (rewards.length === 0) html += `<div>No rewards yet.</div>`;
+  rewards.forEach((r, i) => {
+    html += `
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <span style="font-size:1.5em;">${r.emoji}</span>
+          <b>${r.name}</b>
+        </div>
+        <div>
+          <span style="font-size:1em;">${r.cost} 🐾</span>
+        </div>
+      </div>
+      <div style="margin:4px 0 0 0; font-size:0.97em; color:#35776e;">
+        <span>${r.desc}</span>
+      </div>
+      <div style="font-size:0.92em; color:#888;">${r.category}</div>
+      <div style="font-size:0.9em; color:#665;">${r.bonus ? 'Bonus: '+r.bonus : ''}</div>
+      <div style="margin-top:6px;">`;
+    if (isAdmin) {
+      html += `<button onclick="editReward(${i})">Edit</button>
+               <button onclick="deleteReward(${i})">Delete</button>`;
+    } else {
+      html += `<button onclick="claimReward(${i})">Claim</button>`;
+    }
+    html += `</div></div>`;
+  });
+  html += `</div>`;
+
+  // Claimed list
+  html += `<h3>Claimed rewards</h3><div>`;
+  if (claimed.length === 0) html += `<div>No rewards claimed yet.</div>`;
+  claimed.forEach(c =>
+    html += `<div class="card">
+      <span style="font-size:1.4em;">${c.emoji}</span>
+      <span>${c.name}</span>
+      <span style="font-size:0.95em;color:#888;">(${c.category})</span>
+    </div>`);
+  html += `</div>`;
+
+  document.getElementById('page-rewards').innerHTML = `<h2>Claimed Rewards</h2>${html}`;
+}
+
+// Добавление/редактирование награды
+window.openRewardModal = function(idx) {
+  const userData = getUserData();
+  let isEdit = (typeof idx === "number");
+  let r = isEdit ? userData.rewards[idx] : { name: '', emoji: '', category: '', desc: '', cost: 1, bonus: '' };
+  let cats = (userData.categories || []).map(c => `<option>${c.emoji} ${c.name}</option>`).join('');
+  let html = `
+    <h3>${isEdit ? "Edit" : "Add"} Reward</h3>
+    <label>Name <input id="reward-name" value="${r.name||""}"></label>
+    <label>Category 
+      <select id="reward-cat">${cats}</select>
+      <button type="button" onclick="openEmojiPickerForCategory()">+ New</button>
+    </label>
+    <label>Emoji <input id="reward-emoji" value="${r.emoji||""}" maxlength="2"></label>
+    <label>Description <input id="reward-desc" value="${r.desc||""}"></label>
+    <label>Cost <input id="reward-cost" type="number" min="1" value="${r.cost||1}"></label>
+    <label>Bonus <input id="reward-bonus" value="${r.bonus||""}"></label>
+    <button onclick="${isEdit ? `saveReward(${idx})` : 'saveReward()'}">Save</button>
+    <button onclick="closeModal()">Cancel</button>
+  `;
+  openModal(html);
+};
+
+window.saveReward = function(idx) {
+  const userData = getUserData();
+  let reward = {
+    name: document.getElementById('reward-name').value,
+    category: document.getElementById('reward-cat').value.replace(/^.*?\s/,''),
+    emoji: document.getElementById('reward-emoji').value,
+    desc: document.getElementById('reward-desc').value,
+    cost: parseInt(document.getElementById('reward-cost').value),
+    bonus: document.getElementById('reward-bonus').value
+  };
+  if (!reward.name || !reward.emoji) return alert("Fill all fields");
+  if (typeof idx === "number") userData.rewards[idx] = reward;
+  else userData.rewards.push(reward);
+  saveData(); closeModal(); renderRewards();
+};
+window.editReward = function(idx) { openRewardModal(idx); }
+window.deleteReward = function(idx) {
+  if (!confirm("Delete this reward?")) return;
+  const userData = getUserData();
+  userData.rewards.splice(idx, 1);
+  saveData(); renderRewards();
+}
+window.claimReward = function(idx) {
+  const userData = getUserData();
+  let reward = userData.rewards[idx];
+  if (userData.points < reward.cost) return alert("Not enough paws!");
+  userData.points -= reward.cost;
+  userData.claimed.push({...reward, claimedAt: Date.now() });
+  saveData();
+  renderRewards(); updateUIUser();
+};
+
+// ======= Категории (создание через emoji picker) =======
+window.openEmojiPickerForCategory = function() {
+  closeModal();
+  openEmojiPicker();
+  document.getElementById('emoji-picker-confirm').onclick = function() {
+    let emoji = document.getElementById('emoji-input').value;
+    if (!emoji) { alert("Choose emoji"); return; }
+    let name = prompt("Category name:");
+    if (!name) { alert("Enter name"); return; }
+    addCategory(emoji, name);
+    closeEmojiPicker();
+    // Перерисуй модалку где была открыта
+    renderAll();
+  }
+};
+
+// ======= Роли =======
+window.toggleRole = function() {
+  const userData = getUserData();
+  userData.profile.role = (userData.profile.role === 'questmaster') ? 'performer' : 'questmaster';
+  saveData();
+  renderAll();
+};
+
+// ======= Статистика (Home) =======
+function renderStats() {
+  const userData = getUserData();
+  const completed = userData.completed || [];
+  const claimed = userData.claimed || [];
+  let html = `<div style="display:flex;gap:18px;justify-content:center;">
+    <div><b>Completed quests:</b> ${completed.length}</div>
+    <div><b>Claimed rewards:</b> ${claimed.length}</div>
+  </div>`;
+  document.getElementById('short-stats').innerHTML = html;
+}
+
+// ======= Перерисовка страниц =======
+function renderAll() {
+  loadData();
+  updateUIUser();
+  if (!currentUser || !data[currentUser]) {
+    showLoginModal();
+    return;
+  }
+  renderStats();
+  renderQuests();
+  renderRewards();
+  // Можно добавить аналогичные render-функции для shop/archive/statistics/settings
+}
+
 // ======= On Page Load =======
 window.onload = function () {
   loadData();
