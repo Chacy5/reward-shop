@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
-import { getFirestore, doc, setDoc, onSnapshot, getDoc } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
+import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
 
 // === Firebase Config ===
 const firebaseConfig = {
@@ -23,9 +23,12 @@ let allData = {
   completed: [],
   rewards: [],
   claimed: [],
-  points: {}
+  points: {},
+  customTaskCategories: [],
+  customRewardCategories: []
 };
 let isInitialSync = true;
+let currentPage = "main"; // track current page
 
 // === Firestore Sync ===
 function syncToFirebase() {
@@ -34,20 +37,18 @@ function syncToFirebase() {
 function listenFromFirebase() {
   onSnapshot(doc(db, "groups", groupId), (docSnap) => {
     if (docSnap.exists()) {
-      // Не трём local user, если local user не пустой и не совпадает с currentUser после выхода
       const prevUser = currentUser;
       Object.assign(allData, docSnap.data());
-      // Если это первый запуск, добавим демо-данные только если база пуста
+      // Примеры только если база пуста
       if (isInitialSync && Object.keys(allData.users).length === 0 && allData.quests.length === 0 && allData.rewards.length === 0) {
         addDemoData();
       }
       isInitialSync = false;
-      // Авто-восстановление пользователя, если он был залогинен
       if (prevUser && allData.users[prevUser]) {
         currentUser = prevUser;
         localStorage.setItem('pawCurrentUser', currentUser);
       }
-      renderAll();
+      renderAll(currentPage);
     }
   });
 }
@@ -56,27 +57,29 @@ listenFromFirebase();
 // === Примеры при первом запуске ===
 function addDemoData() {
   allData.quests = [
-    { type: 'daily', name: 'Feed the cat', emoji: '🧑‍🍳', desc: 'Give breakfast to your cat', pts: 3, createdAt: new Date().toISOString() },
-    { type: 'daily', name: 'Morning walk', emoji: '🚶‍♂️', desc: '10 min walk in the park', pts: 2, createdAt: new Date().toISOString() },
-    { type: 'weekly', name: 'Clean up room', emoji: '🧹', desc: 'Tidy up your room on Saturday', pts: 5, createdAt: new Date().toISOString() },
-    { type: 'weekly', name: 'Call grandma', emoji: '☎️', desc: 'Check in on your grandma', pts: 4, createdAt: new Date().toISOString() },
-    { type: 'event', name: 'Birthday surprise', emoji: '🎉', desc: 'Organize a surprise for a friend', pts: 10, createdAt: new Date().toISOString() },
+    { type: 'daily', name: 'Feed the cat', emoji: '🧑‍🍳', desc: 'Give breakfast to your cat', pts: 3, createdAt: new Date().toISOString(), category: "🧑‍🍳" },
+    { type: 'daily', name: 'Morning walk', emoji: '🚶‍♂️', desc: '10 min walk in the park', pts: 2, createdAt: new Date().toISOString(), category: "🚶‍♂️" },
+    { type: 'weekly', name: 'Clean up room', emoji: '🧹', desc: 'Tidy up your room on Saturday', pts: 5, createdAt: new Date().toISOString(), category: "🧹" },
+    { type: 'weekly', name: 'Call grandma', emoji: '☎️', desc: 'Check in on your grandma', pts: 4, createdAt: new Date().toISOString(), category: "☎️" },
+    { type: 'event', name: 'Birthday surprise', emoji: '🎉', desc: 'Organize a surprise for a friend', pts: 10, createdAt: new Date().toISOString(), category: "🎉" },
   ];
   allData.completed = [
-    { username: "demo", type: 'daily', name: 'Brush teeth', emoji: '🦷', desc: 'Morning and evening', pts: 1, createdAt: new Date().toISOString(), completedAt: new Date(Date.now() - 86400000).toISOString() }
+    { username: "demo", type: 'daily', name: 'Brush teeth', emoji: '🦷', desc: 'Morning and evening', pts: 1, createdAt: new Date().toISOString(), completedAt: new Date(Date.now() - 86400000).toISOString(), category: "🦷" }
   ];
   allData.rewards = [
-    { name: 'Chocolate bar', emoji: '🍫', desc: 'Sweet treat', cost: 6 },
-    { name: 'Coffee break', emoji: '☕', desc: 'Buy yourself a nice coffee', cost: 8 },
-    { name: 'Movie night', emoji: '🎬', desc: 'Watch a movie with popcorn', cost: 14 },
-    { name: 'Game hour', emoji: '🎮', desc: 'Play your favorite game for 1 hour', cost: 10 },
-    { name: 'Cute sticker', emoji: '🧸', desc: 'Get a cute sticker for your notebook', cost: 2 },
+    { name: 'Chocolate bar', emoji: '🍫', desc: 'Sweet treat', cost: 6, category: "🍫" },
+    { name: 'Coffee break', emoji: '☕', desc: 'Buy yourself a nice coffee', cost: 8, category: "☕" },
+    { name: 'Movie night', emoji: '🎬', desc: 'Watch a movie with popcorn', cost: 14, category: "🎬" },
+    { name: 'Game hour', emoji: '🎮', desc: 'Play your favorite game for 1 hour', cost: 10, category: "🎮" },
+    { name: 'Cute sticker', emoji: '🧸', desc: 'Get a cute sticker for your notebook', cost: 2, category: "🧸" },
   ];
   allData.claimed = [
-    { username: "demo", name: 'Donut', emoji: '🍩', desc: 'Yummy donut', cost: 5, claimedAt: new Date(Date.now() - 3600 * 1000 * 6).toISOString(), done: true }
+    { username: "demo", name: 'Donut', emoji: '🍩', desc: 'Yummy donut', cost: 5, claimedAt: new Date(Date.now() - 3600 * 1000 * 6).toISOString(), done: true, category: "🍩" }
   ];
   allData.points = { demo: 11 };
   allData.users.demo = { password: "demo", role: "user" };
+  allData.customTaskCategories = ['💼 Работа', '🏠 Дом'];
+  allData.customRewardCategories = ['🍕 Еда', '👕 Одежда'];
   syncToFirebase();
 }
 
@@ -89,7 +92,7 @@ function setUser(login) {
     allData.points[login] = 0;
     syncToFirebase();
   }
-  renderAll();
+  renderAll(currentPage);
 }
 function updateUserUI() {
   const userProfile = document.getElementById('user-profile');
@@ -110,6 +113,14 @@ function userRole() {
   return (allData.users[currentUser] && allData.users[currentUser].role) || "user";
 }
 
+// === Глобальный баланс ===
+function renderGlobalBalance(page) {
+  const bal = document.getElementById('global-balance');
+  if (page === 'settings' || !currentUser) { bal.style.display = 'none'; return; }
+  bal.style.display = 'block';
+  bal.innerHTML = `🐾 <strong>${allData.points[currentUser]||0}</strong> paw points`;
+}
+
 // === Модальные окна ===
 window.showLogin = function showLogin() {
   closeAllModals();
@@ -128,15 +139,47 @@ window.closeRegisterModal = function closeRegisterModal() { document.getElementB
 window.showQuestModal = function showQuestModal() {
   if (userRole() !== 'admin') return;
   closeAllModals();
+  // Добавим кастомные категории в select
+  setTimeout(() => {
+    const sel = document.getElementById('taskEmoji');
+    const custom = allData.customTaskCategories || [];
+    if (custom.length) {
+      sel.innerHTML = `<option value="">No category</option>
+        <option value="🎯">🎯 Goal</option>
+        <option value="📚">📚 Study</option>
+        <option value="🧹">🧹 Cleaning</option>
+        <option value="💪">💪 Sport</option>
+        <option value="🌿">🌿 Nature</option>
+        <option value="📝">📝 Note</option>
+        <option value="🧠">🧠 Growth</option>
+        <option value="CUSTOM" class="custom-category" disabled>─────────</option>
+        ${custom.map(c => `<option value="${c}">${c}</option>`).join("")}`;
+    }
+    document.getElementById('taskName').focus();
+  }, 90);
   document.getElementById('quest-modal-bg').style.display = 'flex';
-  setTimeout(() => { document.getElementById('taskName').focus(); }, 90);
 }
 window.closeQuestModal = function closeQuestModal() { document.getElementById('quest-modal-bg').style.display = 'none'; }
 window.showRewardModal = function showRewardModal() {
   if (userRole() !== 'admin') return;
   closeAllModals();
+  setTimeout(() => {
+    const sel = document.getElementById('rewardEmoji');
+    const custom = allData.customRewardCategories || [];
+    if (custom.length) {
+      sel.innerHTML = `<option value="">No category</option>
+        <option value="🎁">🎁 Gift</option>
+        <option value="🍫">🍫 Sweets</option>
+        <option value="☕">☕ Coffee</option>
+        <option value="🛋️">🛋️ Rest</option>
+        <option value="🎮">🎮 Games</option>
+        <option value="🧸">🧸 Cute</option>
+        <option value="CUSTOM" class="custom-category" disabled>─────────</option>
+        ${custom.map(c => `<option value="${c}">${c}</option>`).join("")}`;
+    }
+    document.getElementById('rewardName').focus();
+  }, 90);
   document.getElementById('reward-modal-bg').style.display = 'flex';
-  setTimeout(() => { document.getElementById('rewardName').focus(); }, 90);
 }
 window.closeRewardModal = function closeRewardModal() { document.getElementById('reward-modal-bg').style.display = 'none'; }
 function closeAllModals() {
@@ -169,7 +212,7 @@ window.doLogin = function doLogin() {
   if (!allData.users[login] || allData.users[login].password !== pass) { document.getElementById('login-err').textContent = "Wrong login or password"; return; }
   setUser(login);
   closeAllModals();
-  renderAll();
+  renderAll(currentPage);
 }
 window.doRegister = function doRegister() {
   let login = document.getElementById('register-username').value.trim();
@@ -181,12 +224,12 @@ window.doRegister = function doRegister() {
   syncToFirebase();
   setUser(login);
   closeAllModals();
-  renderAll();
+  renderAll(currentPage);
 }
 window.signOut = function signOut() {
   localStorage.removeItem('pawCurrentUser');
   currentUser = "";
-  renderAll();
+  renderAll(currentPage);
 }
 
 // === Главная ===
@@ -259,6 +302,7 @@ function renderQuests() {
             <div>
               <b>${q.emoji ? q.emoji + ' ' : ''}${q.name}</b> <span>(${q.pts} points)</span>
               <p class="desc">${q.desc || ''}</p>
+              <span style="color:#888;font-size:0.93em;">${q.category ? `Category: ${q.category}` : ''}</span>
             </div>
             <div>
               ${userRole()==='user'?`
@@ -292,6 +336,7 @@ function renderCompleted() {
       card.innerHTML = `
         <b>${q.emoji ? q.emoji + ' ' : ''}${q.name}</b> <span>(${q.pts} points)</span>
         <p class="desc">${q.desc || ''}</p>
+        <span style="color:#888;font-size:0.93em;">${q.category ? `Category: ${q.category}` : ''}</span>
         <small>Completed: ${new Date(q.completedAt).toLocaleString()}</small>
       `;
       completedSection.appendChild(card);
@@ -321,6 +366,7 @@ function renderShop() {
           <div>
             <strong>${r.emoji ? r.emoji + ' ' : ''}${r.name}</strong>
             <div style="color: #666; font-size: 0.9rem;">${r.desc}</div>
+            <span style="color:#888;font-size:0.93em;">${r.category ? `Category: ${r.category}` : ''}</span>
             ${userRole()==='admin'?`
               <div style="margin-top:8px;">
                 <button onclick="deleteReward(${i})" style="background:#ffb2b2;color:#a00;padding:3px 14px;border-radius:5px;margin-right:10px;">Delete</button>
@@ -360,6 +406,7 @@ function renderClaimed() {
             <div>
               <strong>${r.emoji ? r.emoji + ' ' : ''}${r.name}</strong>
               <div style="color: #666; font-size: 0.9rem;">${r.desc}</div>
+              <span style="color:#888;font-size:0.93em;">${r.category ? `Category: ${r.category}` : ''}</span>
             </div>
             ${
               r.done
@@ -401,10 +448,27 @@ function renderSettings() {
       <div style="font-size:0.97em;color:#777;">Performer: mark quests as done, buy rewards<br>Questmaster: create/delete quests and rewards, change reward cost, mark received</div>
     </div>
     <div class="settings-section">
+      <h3>Custom categories</h3>
+      <div>
+        <b>Tasks:</b>
+        <ul id="custom-task-list">${(allData.customTaskCategories||[]).map(c=>`<li>${c}</li>`).join('')}</ul>
+        <input id="custom-task-input" type="text" maxlength="18" placeholder="Add custom task category" style="width:80%;margin:5px 0;">
+        <button onclick="addCustomTaskCategory()">Add</button>
+      </div>
+      <div style="margin-top:10px;">
+        <b>Rewards:</b>
+        <ul id="custom-reward-list">${(allData.customRewardCategories||[]).map(c=>`<li>${c}</li>`).join('')}</ul>
+        <input id="custom-reward-input" type="text" maxlength="18" placeholder="Add custom reward category" style="width:80%;margin:5px 0;">
+        <button onclick="addCustomRewardCategory()">Add</button>
+      </div>
+    </div>
+    <div class="settings-section" style="text-align:center;">
       <h3>About</h3>
       <div style="color:#065f54;">Talk to my paw — локальное приложение для квестов и наград 🐾</div>
     </div>
-    <button class="logout-btn" onclick="signOut()">Выйти из аккаунта</button>
+    <div style="text-align:center;">
+      <button class="logout-btn" onclick="signOut()">Выйти из аккаунта</button>
+    </div>
   `;
 }
 window.switchRole = function switchRole(role) {
@@ -412,7 +476,7 @@ window.switchRole = function switchRole(role) {
   if (!allData.users[currentUser]) allData.users[currentUser] = { password: "", role: "user" };
   allData.users[currentUser].role = role;
   syncToFirebase();
-  renderAll();
+  renderAll(currentPage);
 };
 window.resetAllData = function resetAllData() {
   if (confirm('Are you sure you want to reset all data?')) {
@@ -421,7 +485,25 @@ window.resetAllData = function resetAllData() {
     allData.completed = allData.completed.filter(q=>q.username!==currentUser);
     allData.claimed = allData.claimed.filter(r=>r.username!==currentUser);
     syncToFirebase();
-    renderAll();
+    renderAll(currentPage);
+  }
+}
+window.addCustomTaskCategory = function() {
+  const val = document.getElementById('custom-task-input').value.trim();
+  if (!val) return;
+  if (!allData.customTaskCategories.includes(val)) {
+    allData.customTaskCategories.push(val);
+    syncToFirebase();
+    renderSettings();
+  }
+}
+window.addCustomRewardCategory = function() {
+  const val = document.getElementById('custom-reward-input').value.trim();
+  if (!val) return;
+  if (!allData.customRewardCategories.includes(val)) {
+    allData.customRewardCategories.push(val);
+    syncToFirebase();
+    renderSettings();
   }
 }
 
@@ -430,25 +512,41 @@ window.addTask = function addTask() {
   if (userRole() !== 'admin') return;
   const type = document.getElementById('questType').value;
   const name = document.getElementById('taskName').value.trim();
-  const emoji = document.getElementById('taskEmoji').value.trim() || '';
+  let category = document.getElementById('taskEmoji').value.trim();
   const desc = document.getElementById('taskDesc').value.trim();
   const pts = parseInt(document.getElementById('taskPoints').value);
+  // Проверяем кастомную категорию
+  if (category === "CUSTOM" || !category) {
+    category = prompt("Введите свою категорию для задания (например, 🚗 Машина, 📈 Работа и т.д.):", "");
+    if (category && !allData.customTaskCategories.includes(category)) {
+      allData.customTaskCategories.push(category);
+    }
+  }
   if (!name || isNaN(pts)) return alert('Please enter valid quest data.');
   const createdAt = new Date().toISOString();
-  allData.quests.push({ type, name, emoji, desc, pts, createdAt });
+  allData.quests.push({ type, name, emoji: category, desc, pts, createdAt, category });
   syncToFirebase();
-  renderAll();
+  renderQuests();
+  renderGlobalBalance(currentPage);
 };
 window.addReward = function addReward() {
   if (userRole() !== 'admin') return;
   const name = document.getElementById('rewardName').value.trim();
-  const emoji = document.getElementById('rewardEmoji').value.trim() || '';
+  let category = document.getElementById('rewardEmoji').value.trim();
   const desc = document.getElementById('rewardDesc').value.trim();
   const cost = parseInt(document.getElementById('rewardCost').value);
+  // Проверяем кастомную категорию
+  if (category === "CUSTOM" || !category) {
+    category = prompt("Введите свою категорию для награды (например, 🏖️ Отдых, 🍔 Еда и т.д.):", "");
+    if (category && !allData.customRewardCategories.includes(category)) {
+      allData.customRewardCategories.push(category);
+    }
+  }
   if (!name || isNaN(cost)) return alert('Please enter valid reward data.');
-  allData.rewards.push({ name, emoji, desc, cost });
+  allData.rewards.push({ name, emoji: category, desc, cost, category });
   syncToFirebase();
-  renderAll();
+  renderShop();
+  renderGlobalBalance(currentPage);
 };
 window.completeTask = function completeTask(index) {
   if (userRole() !== 'user') return;
@@ -457,14 +555,16 @@ window.completeTask = function completeTask(index) {
   allData.completed.push({ ...q, completedAt: new Date().toISOString(), username: currentUser });
   allData.quests.splice(index, 1);
   syncToFirebase();
-  renderAll();
+  renderQuests();
+  renderGlobalBalance(currentPage);
 };
 window.deleteQuest = function deleteQuest(index) {
   if (userRole() !== 'admin') return;
   if (confirm('Delete this quest?')) {
     allData.quests.splice(index, 1);
     syncToFirebase();
-    renderAll();
+    renderQuests();
+    renderGlobalBalance(currentPage);
   }
 };
 window.claimReward = function claimReward(index) {
@@ -474,7 +574,8 @@ window.claimReward = function claimReward(index) {
   allData.points[currentUser] -= r.cost;
   allData.claimed.push({ ...r, claimedAt: new Date().toISOString(), done: false, username: currentUser });
   syncToFirebase();
-  renderAll();
+  renderClaimed();
+  renderGlobalBalance(currentPage);
 };
 window.markRewardDone = function markRewardDone(index) {
   if (userRole() !== 'admin') return;
@@ -482,7 +583,8 @@ window.markRewardDone = function markRewardDone(index) {
   if (!userClaimed[index].done) {
     userClaimed[index].done = true;
     syncToFirebase();
-    renderAll();
+    renderClaimed();
+    renderGlobalBalance(currentPage);
   }
 };
 window.deleteReward = function deleteReward(index) {
@@ -490,7 +592,8 @@ window.deleteReward = function deleteReward(index) {
   if (confirm('Delete this reward?')) {
     allData.rewards.splice(index, 1);
     syncToFirebase();
-    renderAll();
+    renderShop();
+    renderGlobalBalance(currentPage);
   }
 };
 window.changeRewardAmount = function changeRewardAmount(index) {
@@ -499,7 +602,8 @@ window.changeRewardAmount = function changeRewardAmount(index) {
   if (val !== null && !isNaN(parseInt(val))) {
     allData.rewards[index].cost = parseInt(val);
     syncToFirebase();
-    renderAll();
+    renderShop();
+    renderGlobalBalance(currentPage);
   }
 };
 
@@ -524,6 +628,7 @@ const navLinks = document.querySelectorAll('nav.bottom a');
 navLinks.forEach(link => {
   link.addEventListener('click', () => {
     const target = link.getAttribute('data-page');
+    currentPage = target;
     pages.forEach(p => p.classList.remove('active'));
     document.getElementById(`page-${target}`).classList.add('active');
     navLinks.forEach(l => l.classList.remove('active'));
@@ -534,22 +639,25 @@ navLinks.forEach(link => {
 
 // === Рендерить всё ===
 function renderAll(page) {
+  if (!page) page = currentPage;
+  currentPage = page;
   updateUserUI();
+  renderGlobalBalance(page);
   if (!currentUser) {
     showLogin();
     pages.forEach(p => p.classList.remove('active'));
     return;
   }
-  renderMain();
-  renderShop();
-  renderQuests();
-  renderClaimed();
-  renderSettings();
+  if (page === "main") renderMain();
+  else if (page === "shop") renderShop();
+  else if (page === "tasks") renderQuests();
+  else if (page === "claimed") renderClaimed();
+  else if (page === "settings") renderSettings();
   pages.forEach(p => p.classList.remove('active'));
-  const activePage = page ? `page-${page}` : 'page-main';
+  const activePage = `page-${page}`;
   document.getElementById(activePage).classList.add('active');
   navLinks.forEach(l => l.classList.remove('active'));
-  navLinks.forEach(l => { if (l.getAttribute('data-page') === (page||'main')) l.classList.add('active'); });
+  navLinks.forEach(l => { if (l.getAttribute('data-page') === page) l.classList.add('active'); });
   renderStats();
 }
 
@@ -558,7 +666,7 @@ window.addEventListener('DOMContentLoaded', () => {
   if (currentUser && !allData.users[currentUser]) {
     setUser(currentUser);
   } else {
-    renderAll();
+    renderAll(currentPage);
   }
   document.getElementById('loader').style.display = 'none';
 });
