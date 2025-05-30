@@ -1,81 +1,38 @@
-:root {
-  --main-mint: #6fedd1;
-  --main-mint-light: #b2fff0;
-  --main-mint-dark: #189d8a;
-  --accent-pink: #ffbfce;
-  --accent-yellow: #ffeeac;
-  --bg-light: #fdfaf2;
-  --text-dark: #22403a;
-}
-
 html, body {
   min-height: 100vh;
   min-width: 100vw;
-  background: var(--bg-light);
+  background: #fdfaf2;
   font-family: 'Montserrat Alternates', sans-serif;
-  color: var(--text-dark);
+  color: #22403a;
   box-sizing: border-box;
-  margin: 0; padding: 0;
+  margin: 0;
+  padding: 0;
   position: relative;
 }
 
+/* Фоновый паттерн */
 #paw-bg-pattern {
   position: fixed;
   top: 0; left: 0;
-  width: 100vw;
-  height: 100vh;
+  width: 100vw; height: 100vh;
   z-index: 0;
   pointer-events: none;
-  opacity: 1;
 }
 
-header, main, nav, .modal-bg, .modal, .page {
-  position: relative;
-  z-index: 2;
-}
 header {
-  background: var(--main-mint);
+  background: #6fedd1;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 8px 12px 6px 12px;
+  padding: 8px 16px 6px 16px;
   min-height: 54px;
+  position: relative;
+  z-index: 2;
 }
+
 .logo-svg {
   width: 68px; height: 68px;
   margin-left: 4px;
-}
-#user-info {
-  position: relative;
-  display: flex;
-  align-items: center;
-}
-#show-user-menu {
-  position: relative;
-  width: 48px; height: 48px;
-  background: none;
-  border: none;
-  outline: none;
-  cursor: pointer;
-  z-index: 2;
-}
-#show-user-menu img {
-  width: 30px; height: 30px; 
-  position: relative; 
-  z-index: 2;
-}
-#show-user-menu::before {
-  content: '';
-  position: absolute;
-  left: 2px; top: 2px;
-  z-index: 2008;
-  border-radius: 50%;
-  background: #fff;
-  width: 44px; height: 44px;
-  display: block;
-  opacity: 1;
-  box-shadow: 0 2px 12px #b2fff0a8;
-  pointer-events: none;
 }
 
 #paw-balance {
@@ -88,6 +45,42 @@ header {
   color: #065f54;
   margin-right: 15px;
 }
+
+#user-info {
+  position: relative;
+  display: flex; align-items: center;
+  z-index: 3;
+}
+
+#show-user-menu {
+  position: relative;
+  width: 48px; height: 48px;
+  background: none;
+  border: none;
+  outline: none;
+  cursor: pointer;
+  z-index: 3;
+}
+#show-user-menu img {
+  width: 30px; height: 30px;
+  position: relative;
+  z-index: 4;
+}
+#show-user-menu::before {
+  content: '';
+  position: absolute;
+  left: 2px; top: 2px;
+  z-index: 3;
+  border-radius: 50%;
+  background: #fff;
+  width: 44px; height: 44px;
+  display: block;
+  opacity: 1;
+  box-shadow: 0 2px 12px #b2fff0a8;
+  pointer-events: none;
+}
+
+/* Меню пользователя всегда выше всех! */
 #user-menu {
   position: absolute;
   top: 52px; right: 0;
@@ -96,8 +89,10 @@ header {
   border-radius: 13px;
   box-shadow: 0 2px 13px #6fedd180;
   padding: 8px 0;
-  z-index: 10000; /* Максимально высокий приоритет */
+  z-index: 100000 !important;
+  display: none;
 }
+
 .user-menu-item {
   padding: 13px 20px;
   cursor: pointer;
@@ -105,18 +100,21 @@ header {
   border-bottom: 1px solid #e0f7f1;
   letter-spacing: 0.02em;
   transition: background 0.12s;
-  user-select: none;
   background: none;
   outline: none;
   border: none;
   text-align: left;
+  width: 100%;
+  display: block;
+  user-select: none;
 }
 .user-menu-item:last-child { border-bottom: none; }
-.user-menu-item:hover,
-.user-menu-item:focus {
+.user-menu-item:hover, .user-menu-item:focus {
   background: #f2fffd;
   color: #189d8a;
+  outline: none;
 }
+
 .page {
   margin: 0 auto;
   max-width: 700px;
@@ -124,11 +122,13 @@ header {
   background: transparent;
   padding: 16px 18px 60px 18px;
   display: none;
+  z-index: 1;
 }
 .page.active { display: block; }
+
 nav.bottom {
   position: fixed;
-  left: 0; bottom: 0; z-index: 5;
+  left: 0; bottom: 0;
   width: 100vw;
   display: flex;
   background: #e0f7f1e6;
@@ -138,6 +138,7 @@ nav.bottom {
   align-items: center;
   padding: 2px 0 1px 0;
   height: 84px;
+  z-index: 10;
 }
 nav.bottom a {
   flex: 1;
@@ -158,6 +159,7 @@ nav.bottom a.active, nav.bottom a:hover {
 nav.bottom img {
   width: 35px; height: 35px; margin-bottom: 5px;
 }
+
 .card {
   background: #fff;
   border-radius: 19px;
@@ -167,10 +169,12 @@ nav.bottom img {
   font-size: 1.14em;
   border-left: 9px solid #b2fff0;
   position: relative;
+  z-index: 1;
 }
 .card.daily { border-left-color: #6fedd1; }
 .card.weekly { border-left-color: #189d8a; }
 .card.event { border-left-color: #ffd6c1; }
+
 .paw-action-btn,
 .fancy-btn, .edit-btn, .delete-btn, .filter-btn {
   background: linear-gradient(90deg,#6fedd1 70%,#b2fff0 100%);
@@ -220,6 +224,7 @@ nav.bottom img {
   border-radius: 13px;
   box-shadow: 0 2px 10px #ffbfce22;
 }
+
 .demo-hint {
   color: #0a9a8b;
   background: #b2fff021;
@@ -284,7 +289,7 @@ nav.bottom img {
 }
 .modal-bg {
   position: fixed;
-  z-index: 1001;
+  z-index: 20000;
   top: 0; left: 0;
   width: 100vw; height: 100vh;
   background: #0004;
