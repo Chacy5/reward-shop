@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title>Talk to my paw</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
   <link href="https://fonts.googleapis.com/css2?family=Montserrat+Alternates:wght@400;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
@@ -11,7 +11,10 @@
   <div class="loader" id="loader" style="display:none">Loading...</div>
   <header>
     <span class="logo-wrap">
-      <img src="image1" alt="Talk to my paw" class="logo-svg" width="80" height="80" />
+      <img src="image1" alt="Talk to my paw" class="logo-svg" />
+    </span>
+    <span id="paw-balance" style="display:none;">
+      <span class="paw-balance-text">🐾 <span id="paw-balance-val">0</span></span>
     </span>
     <span id="user-info">
       <button id="show-login-btn" title="Sign in" type="button">
@@ -23,8 +26,6 @@
       </span>
     </span>
   </header>
-  <!-- Баланс вынесен отдельно -->
-  <div id="global-balance"></div>
   <main>
     <div id="page-main" class="page active"></div>
     <div id="page-shop" class="page"></div>
@@ -32,23 +33,27 @@
     <div id="page-claimed" class="page"></div>
     <div id="page-settings" class="page"></div>
   </main>
-  <!-- Модалки и SVG-иконки не меняются -->
-
+  <!-- ... ВАШИ МОДАЛЬНЫЕ ОКНА LOGIN/REGISTER/QUEST/REWARD ... -->
+  <!-- SVG ICONS ONLY -->
+  <svg style="display:none;">
+    <symbol id="solar-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4" fill="none" stroke="#065f54" stroke-width="1.5"/><path d="M3 20v-1a6 6 0 0 1 12 0v1" fill="none" stroke="#065f54" stroke-width="1.5"/></symbol>
+    <symbol id="solar-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3" fill="none" stroke="#065f54" stroke-width="1.5"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2.07 2.07 0 0 1-2.93 2.93l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2.07 2.07 0 0 1-4.14 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2.07 2.07 0 0 1-2.93-2.93l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2.07 2.07 0 0 1 0-4.14h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2.07 2.07 0 0 1 2.93-2.93l.06.06a1.65 1.65 0 0 0 1.82.33h.02A1.65 1.65 0 0 0 9 5.09V5a2.07 2.07 0 0 1 4.14 0v.09a1.65 1.65 0 0 0 1 1.51h.02a1.65 1.65 0 0 0 1.82-.33l.06-.06a2.07 2.07 0 0 1 2.93 2.93l-.06.06a1.65 1.65 0 0 0-.33 1.82v.02A1.65 1.65 0 0 0 19.4 9H21a2.07 2.07 0 0 1 0 4.14h-.09a1.65 1.65 0 0 0-1.51 1z" fill="none" stroke="#065f54" stroke-width="1.1"/></symbol>
+  </svg>
   <nav class="bottom">
     <a data-page="main" class="active" title="Home">
-      <img src="home.png" class="nav-icon" alt="Home" />
+      <img class="nav-icon-img" src="image2" alt="Home" />
       <span class="nav-label">Home</span>
     </a>
     <a data-page="shop" title="Shop">
-      <img src="shop.png" class="nav-icon" alt="Shop" />
+      <img class="nav-icon-img" src="image3" alt="Shop" />
       <span class="nav-label">Shop</span>
     </a>
     <a data-page="tasks" title="Quests">
-      <img src="quests.png" class="nav-icon" alt="Quests" />
+      <img class="nav-icon-img" src="image4" alt="Quests" />
       <span class="nav-label">Quests</span>
     </a>
     <a data-page="claimed" title="Rewards">
-      <img src="rewards.png" class="nav-icon" alt="Rewards" />
+      <img class="nav-icon-img" src="image5" alt="Rewards" />
       <span class="nav-label">Rewards</span>
     </a>
     <a data-page="settings" title="Settings">
