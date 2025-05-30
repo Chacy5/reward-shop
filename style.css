@@ -57,12 +57,12 @@ header {
   border: none;
   outline: none;
   cursor: pointer;
-  z-index: 2006;
+  z-index: 2;
 }
 #show-user-menu img {
   width: 30px; height: 30px; 
   position: relative; 
-  z-index: 2007;
+  z-index: 2;
 }
 #show-user-menu::before {
   content: '';
@@ -96,7 +96,7 @@ header {
   border-radius: 13px;
   box-shadow: 0 2px 13px #6fedd180;
   padding: 8px 0;
-  z-index: 2005;
+  z-index: 10000; /* Максимально высокий приоритет */
 }
 .user-menu-item {
   padding: 13px 20px;
