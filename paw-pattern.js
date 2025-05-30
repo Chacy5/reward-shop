@@ -1,23 +1,23 @@
-// Paw SVG as path for drawing (simple paw)
+// Цвета паттерна
+const PAW_COLORS = [
+  'rgba(111,237,209,0.19)', // бирюзовый
+  'rgba(255,191,206,0.22)', // розовый
+  'rgba(255,238,172,0.17)'  // желтый
+];
+
 const PAW_PATH = [
-  // Main pad (ellipse)
   { type: "ellipse", x: 0, y: 0, rx: 16, ry: 14, rotation: 0 },
-  // Toes (ellipses)
   { type: "ellipse", x: -13, y: -15, rx: 6.5, ry: 5.5, rotation: -20 },
   { type: "ellipse", x: 13, y: -15, rx: 6.5, ry: 5.5, rotation: 20 },
   { type: "ellipse", x: -7, y: -25, rx: 4.5, ry: 3.8, rotation: -15 },
   { type: "ellipse", x: 7, y: -25, rx: 4.5, ry: 3.8, rotation: 15 }
 ];
 
-// Main colors: soft black/grey, beige, sand
-const PAW_COLORS = ['#2d303a', '#e3d7c2', '#d4ab7c'];
-
 function drawPaw(ctx, x, y, size, angle, color) {
   ctx.save();
   ctx.translate(x, y);
   ctx.rotate(angle * Math.PI / 180);
   ctx.scale(size / 40, size / 40); // base paw size ≈ 40px
-  ctx.globalAlpha = 0.93;
   ctx.fillStyle = color;
   PAW_PATH.forEach(part => {
     ctx.save();
@@ -31,6 +31,17 @@ function drawPaw(ctx, x, y, size, angle, color) {
   ctx.restore();
 }
 
+function pawsNotOverlap(paws, x, y, r) {
+  // r — "радиус" лапки (чтобы между лапками было пространство хотя бы 10px)
+  for (let i = 0; i < paws.length; ++i) {
+    let dx = x - paws[i].x;
+    let dy = y - paws[i].y;
+    let dist = Math.sqrt(dx*dx + dy*dy);
+    if (dist < (paws[i].r + r + 10)) return false;
+  }
+  return true;
+}
+
 function drawPawPattern() {
   const canvas = document.getElementById('paw-bg-pattern');
   if (!canvas) return;
@@ -41,25 +52,33 @@ function drawPawPattern() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
   // Pattern settings
-  const pawCount = Math.floor(canvas.width * canvas.height / 12000); // density
-  const minPaw = 28, maxPaw = 56;
-  for (let i = 0; i < pawCount; ++i) {
-    // Random position, avoid too close to edge
-    const x = Math.random() * (canvas.width - maxPaw*2) + maxPaw;
-    const y = Math.random() * (canvas.height - maxPaw*2) + maxPaw;
-    // Size and angle
+  const pawCount = Math.floor(canvas.width * canvas.height / 18500); // немного меньше для плотности
+  const minPaw = 32, maxPaw = 62;
+  let paws = [];
+  let fails = 0, i = 0, maxTries = pawCount * 20;
+
+  // Не даём накладываться лапкам
+  while (paws.length < pawCount && fails < maxTries) {
     const size = minPaw + Math.random() * (maxPaw - minPaw);
-    const angle = Math.random() * 360;
-    // Color: mostly light, иногда темнее
-    const color = PAW_COLORS[Math.floor(Math.random() * PAW_COLORS.length)];
-    drawPaw(ctx, x, y, size, angle, color);
+    const r = size * 0.6; // "радиус" для проверки
+    const x = r + Math.random() * (canvas.width - 2*r);
+    const y = r + Math.random() * (canvas.height - 2*r);
+    if (pawsNotOverlap(paws, x, y, r)) {
+      paws.push({ x, y, r, size, angle: Math.random() * 360, color: PAW_COLORS[Math.floor(Math.random() * PAW_COLORS.length)] });
+      i++;
+      fails = 0;
+    } else {
+      fails++;
+    }
   }
-  // Draw small dots for extra "fun"
-  for (let i = 0; i < pawCount * 2; ++i) {
+  paws.forEach(paw => drawPaw(ctx, paw.x, paw.y, paw.size, paw.angle, paw.color));
+
+  // Дотсы
+  for (let i = 0; i < pawCount * 1.5; ++i) {
     const r = 1 + Math.random() * 3;
     const x = Math.random() * canvas.width;
     const y = Math.random() * canvas.height;
-    ctx.globalAlpha = 0.16 + Math.random() * 0.15;
+    ctx.globalAlpha = 0.14 + Math.random() * 0.13;
     ctx.beginPath();
     ctx.fillStyle = PAW_COLORS[Math.floor(Math.random() * PAW_COLORS.length)];
     ctx.arc(x, y, r, 0, 2 * Math.PI);
@@ -68,6 +87,5 @@ function drawPawPattern() {
   ctx.globalAlpha = 1;
 }
 
-// Redraw on resize
 window.addEventListener('resize', drawPawPattern);
 window.addEventListener('DOMContentLoaded', drawPawPattern);
