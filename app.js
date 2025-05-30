@@ -34,7 +34,7 @@ function getDemoData() {
       { id: 4, name: 'Cute sticker', emoji: '🧸', category: "Cute", desc: 'Sticker for notebook', cost: 2, bonus: "", quantity: 10 }
     ],
     claimed: [
-      { id: 100, name: 'Donut', emoji: '🍩', category: "Sweets", desc: 'Yummy donut', cost: 5, claimedAt: Date.now() - 6 * 3600e3, bonus: "" }
+      { id: 100, name: 'Donut', emoji: '🍩', category: "Sweets", desc: 'Yummy donut', cost: 5, claimedAt: Date.now() - 6 * 3600e3, bonus: "", received: false }
     ],
     lastDailyReset: 0,
     lastWeeklyReset: 0,
@@ -147,6 +147,58 @@ function categoryDropdown(selected) {
     <option value="add-cat">➕ Add category</option></select>`;
 }
 
+// ======= Claimed Rewards =======
+function renderClaimedRewards() {
+  const user = getUserData();
+  const isQM = user.profile.role === 'Questmaster';
+  // Показываем все купленные награды (received: true|false)
+  let claimed = user.claimed || [];
+  let html = `<h2>Claimed Rewards</h2>`;
+  if (claimed.length === 0) html += "<div>No claimed rewards.</div>";
+  claimed.forEach((c, i) => {
+    html += `<div class="card" style="position:relative;overflow:hidden;">
+      <div><span style="font-size:1.5em">${c.emoji}</span> <b>${c.name}</b> (${c.category})</div>
+      <div>${c.desc}</div>
+      <div>Cost: ${c.cost} 🐾</div>
+      <div>${c.bonus ? 'Bonus: ' + c.bonus : ''}</div>
+      <div style="margin-top:6px;">`;
+    if (c.received) {
+      // Печать лапки и надпись
+      html += `<div style="margin:10px 0 0 0;display:flex;align-items:center;gap:8px;">
+        <span style="
+          display:inline-block;
+          width:40px;height:40px;
+          border-radius:50%;background:#eafff8;border:2.5px solid #74ccb3;
+          transform: rotate(30deg);
+          position:relative;
+          box-shadow:0 2px 8px #6fedd140;">
+          <span style="font-size:2em;position:absolute;top:2px;left:5px;">🐾</span>
+        </span>
+        <span style="font-size:1.1em;font-weight:bold;color:#388064;">Reward received</span>
+      </div>`;
+    } else {
+      if (isQM) {
+        html += `<button onclick="markRewardReceived(${c.id})">Mark as received</button>`;
+      } else {
+        html += `<span style="color:#888;font-size:1.05em;">Waiting for confirmation...</span>`;
+      }
+    }
+    html += `</div></div>`;
+  });
+  document.getElementById('page-rewards').innerHTML = html;
+}
+
+function markRewardReceived(id) {
+  const user = getUserData();
+  let reward = user.claimed.find(r => r.id === id);
+  if (reward) {
+    reward.received = true;
+    saveData();
+    renderClaimedRewards();
+  }
+}
+window.markRewardReceived = markRewardReceived;
+
 // ====== CRUD Quests ======
 function renderQuests() {
   resetDailiesAndWeeklies();
@@ -235,7 +287,7 @@ function saveQuest(id) {
   if(!quest.name || !quest.emoji) return alert("Fill all fields");
   if(id) {
     let idx = user.quests.findIndex(q=>q.id===id);
-    user.quests[idx]=quest;
+    if (idx !== -1) user.quests[idx]=quest;
   } else user.quests.push(quest);
   saveData(); closeModal(); renderQuests();
 }
@@ -243,7 +295,7 @@ function editQuest(id) { openQuestModal(id); }
 function deleteQuest(id) {
   if (!confirm("Delete this quest?")) return;
   let user = getUserData();
-  user.quests = user.quests.filter(q=>q.id!==id);
+  user.quests = user.quests.filter(q => q.id !== id);
   saveData(); renderQuests();
 }
 function completeQuest(id) {
@@ -255,7 +307,7 @@ function completeQuest(id) {
   saveData(); renderQuests(); updateUIUser(); renderStats();
 }
 
-// ====== CRUD Rewards ======
+// ====== CRUD Rewards & Shop ======
 function renderShop() {
   const user = getUserData();
   const isQM = user.profile.role === 'Questmaster';
@@ -283,14 +335,6 @@ function renderShop() {
     }
     html += `</div></div>`;
   });
-  // Claimed history
-  html += `<h3>Claimed rewards</h3><div>`;
-  let claimed = user.claimed||[];
-  if (claimed.length === 0) html += `<div>No rewards claimed yet.</div>`;
-  claimed.slice(-5).reverse().forEach(c =>
-    html += `<div class="card"><span style="font-size:1.4em;">${c.emoji}</span> <span>${c.name}</span>
-      <span style="font-size:0.95em;color:#888;">(${c.category})</span></div>`);
-  html += `</div>`;
   document.getElementById('page-shop').innerHTML = `<h2>Reward Store</h2>${html}`;
 }
 function openRewardModal(id) {
@@ -345,7 +389,8 @@ function saveReward(id) {
   };
   if(!reward.name || !reward.emoji) return alert("Fill all fields");
   if(id) {
-    let idx = user.rewards.findIndex(r=>r.id===id); user.rewards[idx]=reward;
+    let idx = user.rewards.findIndex(r=>r.id===id);
+    if (idx !== -1) user.rewards[idx] = reward;
   } else user.rewards.push(reward);
   saveData(); closeModal(); renderShop();
 }
@@ -353,7 +398,7 @@ function editReward(id) { openRewardModal(id); }
 function deleteReward(id) {
   if (!confirm("Delete this reward?")) return;
   let user = getUserData();
-  user.rewards = user.rewards.filter(r=>r.id!==id);
+  user.rewards = user.rewards.filter(r => r.id !== id);
   saveData(); renderShop();
 }
 function claimReward(id) {
@@ -362,7 +407,11 @@ function claimReward(id) {
   if (r.quantity !== undefined && r.quantity <= 0) return alert("Out of stock!");
   user.points -= r.cost;
   r.quantity = (r.quantity ?? Infinity) - 1;
-  user.claimed.push({...r, claimedAt: Date.now()});
+  user.claimed.push({
+    id: (Math.random()*1e8)|0,
+    name: r.name, emoji: r.emoji, category: r.category, desc: r.desc,
+    cost: r.cost, bonus: r.bonus, claimedAt: Date.now(), received: false
+  });
   saveData(); renderShop(); updateUIUser(); renderStats();
 }
 
@@ -430,7 +479,7 @@ function renderAll() {
   loadData(); resetDailiesAndWeeklies(); updateUIUser();
   if (!currentUser || !data[currentUser]) { showLoginModal(); return; }
   // меню: учесть роль
-  renderStats(); renderQuests(); renderShop(); renderStatsPage();
+  renderStats(); renderQuests(); renderShop(); renderClaimedRewards(); renderStatsPage();
   // обновить user-menu с переключателем роли
   let menu = document.getElementById('user-menu');
   menu.innerHTML = `
