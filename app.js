@@ -229,19 +229,19 @@ function renderQuests() {
       </div>
       <div style="margin:4px 0 0 0; font-size:0.97em; color:#35776e;">${q.desc}</div>
       <div style="font-size:0.92em; color:#888;">${q.type}, ${q.category}</div>
-      <div style="margin-top:6px;">`;
+      <div style="margin-top:10px;">`;
     if (!isDemo() && isQM) {
-      html += `<button onclick="editQuest(${q.id})">Edit</button>
-               <button onclick="deleteQuest(${q.id})">Delete</button>`;
+      html += `<button class="edit-btn" onclick="editQuest(${q.id})">✏️ Edit</button>
+               <button class="delete-btn" onclick="deleteQuest(${q.id})">🗑️ Delete</button>`;
     } else if (!q.done) {
-      html += `<button onclick="completeQuest(${q.id})">Mark done</button>`;
+      html += `<button class="paw-action-btn" onclick="completeQuest(${q.id})">Mark done</button>`;
     }
     html += `</div></div>`;
   });
   document.getElementById('page-quests').innerHTML = `<h2>Quests</h2>${html}`;
 }
 
-// ====== SHOP ======
+// ...аналогично для renderShop
 function renderShop() {
   const user = getUserData();
   const isQM = user.profile.role === 'Questmaster';
@@ -265,15 +265,32 @@ function renderShop() {
       <div style="font-size:0.92em; color:#888;">${r.category}</div>
       <div style="font-size:0.9em; color:#665;">${r.bonus ? 'Bonus: '+r.bonus : ''}</div>
       <div style="font-size:0.92em;color:#3c7779;">Left: ${r.quantity??'∞'}</div>
-      <div style="margin-top:6px;">`;
+      <div style="margin-top:10px;">`;
     if (!isDemo() && isQM) {
-      html += `<button onclick="editReward(${r.id})">Edit</button> <button onclick="deleteReward(${r.id})">Delete</button>`;
+      html += `<button class="edit-btn" onclick="editReward(${r.id})">✏️ Edit</button>
+               <button class="delete-btn" onclick="deleteReward(${r.id})">🗑️ Delete</button>`;
     } else if (!isDemo() && (r.quantity??1)>0) {
-      html += `<button onclick="claimReward(${r.id})">Claim</button>`;
+      html += `<button class="paw-action-btn" onclick="claimReward(${r.id})">Claim</button>`;
     }
     html += `</div></div>`;
   });
   document.getElementById('page-shop').innerHTML = `<h2>Reward Store</h2>${html}`;
+}
+
+// ====== Роли ======
+function renderUserMenuRoleSwitch() {
+  if (isDemo()) return '';
+  let role = getUserData().profile.role;
+  let other = role === "Questmaster" ? "Performer" : "Questmaster";
+  return `<div class="user-menu-item" id="switch-role">${role} (Switch to ${other})</div>`;
+}
+function setupRoleSwitch() {
+  let node = document.getElementById('switch-role');
+  if(node) node.onclick = function() {
+    let user = getUserData();
+    user.profile.role = user.profile.role === "Questmaster" ? "Performer" : "Questmaster";
+    saveData(); renderAll(); closeUserMenu();
+  };
 }
 
 // ====== CLAIMED REWARDS =======
