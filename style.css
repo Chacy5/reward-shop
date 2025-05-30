@@ -340,3 +340,126 @@ nav.bottom img {
   background: #b2fff0;
   border-radius: 6px;
 }
+/* --- MOBILE ADAPTATION --- */
+@media (max-width: 700px) {
+  body {
+    font-size: 16px;
+    padding: 0;
+    margin: 0;
+    overflow-x: hidden;
+  }
+  .logo-svg {
+    width: 42px;
+    height: 42px;
+    margin-left: 0;
+  }
+  header {
+    min-height: 42px;
+    padding: 4px 4vw 3px 4vw;
+  }
+  #paw-balance {
+    font-size: 1.05em;
+    padding: 4px 14px;
+    margin-right: 0;
+  }
+  #user-info, #show-user-menu {
+    width: 38px;
+    height: 38px;
+  }
+  #show-user-menu img {
+    width: 24px;
+    height: 24px;
+  }
+  #show-user-menu::before {
+    width: 34px;
+    height: 34px;
+    left: 2px; top: 2px;
+  }
+
+  #user-menu {
+    top: 38px;
+    right: 2vw;
+    min-width: 130px;
+    font-size: 1em;
+    border-radius: 10px;
+    box-shadow: 0 2px 13px #6fedd180, 0 2px 14px #fff6;
+  }
+  .user-menu-item {
+    padding: 10px 13px;
+    font-size: 1em;
+  }
+
+  .page {
+    max-width: 100vw;
+    padding: 11px 2vw 66px 2vw;
+    font-size: 1em;
+  }
+
+  .card {
+    padding: 13px 8px 8px 8px;
+    margin: 11px 0 0 0;
+    font-size: 1em;
+    border-radius: 14px;
+  }
+
+  .paw-action-btn,
+  .fancy-btn,
+  .edit-btn,
+  .delete-btn,
+  .filter-btn {
+    font-size: 1em;
+    padding: 9px 10px;
+    border-radius: 12px;
+    margin: 7px 3px 7px 0;
+    min-width: 0;
+  }
+
+  nav.bottom {
+    height: 62px;
+    border-radius: 12px 12px 0 0;
+    font-size: 1em;
+    padding: 0;
+    bottom: 0;
+    left: 0;
+  }
+  nav.bottom img {
+    width: 22px;
+    height: 22px;
+    margin-bottom: 2px;
+  }
+  nav.bottom a {
+    padding: 5px 0 0 0;
+    font-size: 0.98em;
+    min-width: 0;
+    border-radius: 9px;
+  }
+
+  .modal-bg {
+    padding: 0;
+  }
+  .modal {
+    min-width: 0;
+    width: 96vw;
+    max-width: 98vw;
+    padding: 16px 7px 9px 7px;
+    border-radius: 15px;
+    font-size: 1em;
+  }
+  .modal label {
+    font-size: 1em;
+  }
+  .modal input, .modal select, .modal textarea {
+    font-size: 1em;
+    padding: 7px 2px;
+  }
+  .infograph {
+    gap: 12px;
+    margin: 16px 0 10px 0;
+  }
+  .infocard {
+    min-width: 80px;
+    padding: 10px 7px;
+    font-size: 0.98em;
+    border-radius: 10px;
+  }
+}
