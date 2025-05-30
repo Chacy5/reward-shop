@@ -261,3 +261,39 @@ input:focus, select:focus {
   border-color: #6fedd1;
   outline: none;
 }
+.modal {
+  border-radius: 18px;
+  background: #f0fffa;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.13);
+  min-width: 320px;
+  max-width: 96vw;
+  width: 350px;
+  margin: auto;
+  padding: 28px 18px 18px 18px;
+  position: relative;
+  animation: fadeInUp 0.2s;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+.modal label {
+  display: block;
+  margin-bottom: 10px;
+  width: 100%;
+}
+.modal input, .modal select, .modal textarea {
+  width: 100%;
+  box-sizing: border-box;
+  max-width: 100%;
+  min-width: 0;
+  margin-bottom: 10px;
+  font-size: 1em;
+}
+@media (max-width: 500px) {
+  .modal {
+    width: 98vw;
+    min-width: unset;
+    padding: 18px 4vw 14px 4vw;
+  }
+}
