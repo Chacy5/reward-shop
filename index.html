@@ -7,7 +7,9 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div id="paw-bg-pattern"></div>
+  <!-- Лапковый паттерн -->
+  <canvas id="paw-bg-pattern" aria-hidden="true"></canvas>
+
   <header>
     <span class="logo-wrap">
       <img src="image1" alt="Talk to my paw Logo" class="logo-svg" />
@@ -20,43 +22,20 @@
         <img src="image2" alt="User" width="30" height="30"/>
       </button>
       <div id="user-menu" style="display:none;">
-        <div class="user-menu-item" id="user-menu-edit-profile">Edit profile</div>
-        <div class="user-menu-item" id="user-menu-change-password">Change password</div>
-        <div class="user-menu-item" id="user-menu-statistics">Statistics</div>
-        <div class="user-menu-item" id="user-menu-logout">Logout</div>
+        <!-- генерируется через JS -->
       </div>
     </span>
   </header>
   <main>
-    <!-- Home page -->
-    <section id="page-home" class="page active">
-      <h2>Welcome!</h2>
-      <div id="short-stats"></div>
-    </section>
-    <section id="page-shop" class="page">
-      <h2>Reward Store</h2>
-    </section>
-    <section id="page-quests" class="page">
-      <h2>Quests</h2>
-    </section>
-    <section id="page-rewards" class="page">
-      <h2>Claimed Rewards</h2>
-    </section>
-    <section id="page-settings" class="page">
-      <h2>Settings</h2>
-      <div>
-        <button id="theme-switcher">Switch theme</button>
-        <button id="archive-open">Open archive</button>
-        <button id="edit-categories">Edit categories</button>
-        <button id="reset-all-data">Reset all data</button>
-      </div>
-    </section>
+    <section id="page-home" class="page active"></section>
+    <section id="page-shop" class="page"></section>
+    <section id="page-quests" class="page"></section>
+    <section id="page-rewards" class="page"></section>
+    <section id="page-settings" class="page"></section>
     <section id="page-archive" class="page">
       <h2>Archive</h2>
     </section>
-    <section id="page-statistics" class="page">
-      <h2>Statistics</h2>
-    </section>
+    <section id="page-statistics" class="page"></section>
   </main>
   <nav class="bottom">
     <a data-page="home" class="active"><img src="image3" alt="Home"/><span>Home</span></a>
@@ -79,6 +58,7 @@
       </div>
     </div>
   </div>
+  <script src="paw-pattern.js"></script>
+  <script src="app.js"></script>
 </body>
 </html>
-<script src="app.js"></script>
