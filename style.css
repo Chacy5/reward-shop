@@ -5,13 +5,7 @@
   --bg-light: #eafff8;
   --danger-color: #ff4c5a;
 }
-
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
-
+* { box-sizing: border-box; margin: 0; padding: 0; }
 html, body {
   width: 100vw;
   min-height: 100vh;
@@ -20,7 +14,6 @@ html, body {
   font-family: 'Montserrat Alternates', sans-serif;
   overflow-x: hidden;
 }
-
 body {
   min-height: 100vh;
   width: 100vw;
@@ -28,7 +21,6 @@ body {
   flex-direction: column;
   justify-content: flex-start;
 }
-
 header {
   width: 100vw;
   background: var(--main-color);
@@ -39,21 +31,14 @@ header {
   box-sizing: border-box;
   border-bottom: 2px solid #57e1c0;
 }
-
-.logo-wrap {
-  display: flex;
-  align-items: center;
-}
+.logo-wrap { display: flex; align-items: center; }
 .logo-svg {
-  width: 12vw;
-  max-width: 54px;
-  height: 12vw;
-  max-height: 54px;
+  width: 12vw; max-width: 54px;
+  height: 12vw; max-height: 54px;
   object-fit: contain;
   aspect-ratio: 1/1;
   display: block;
 }
-
 #paw-balance {
   font-size: 1.2em;
   flex: 1 1 auto;
@@ -71,14 +56,12 @@ header {
   border: 2px solid #b2fff0;
   color: var(--text-dark);
 }
-
 #user-info {
   display: flex;
   align-items: center;
   gap: 1vw;
   font-size: 1rem;
 }
-
 #show-login-btn, #signout-btn {
   background: transparent;
   border: none;
@@ -90,11 +73,7 @@ header {
   color: var(--main-color);
   transition: color 0.15s;
 }
-#show-login-btn:hover, #signout-btn:hover {
-  color: #025a4a;
-}
-
-/* Main & Pages */
+#show-login-btn:hover, #signout-btn:hover { color: #025a4a; }
 main {
   flex: 1 1 auto;
   width: 100vw;
@@ -112,10 +91,7 @@ main {
   min-height: 80vh;
   box-sizing: border-box;
 }
-.page.active {
-  display: block;
-}
-
+.page.active { display: block; }
 .section {
   background: #f0fffa;
   margin: 5vw 2vw 5vw 2vw;
@@ -128,7 +104,6 @@ main {
   margin-left: auto;
   margin-right: auto;
 }
-
 .card {
   background: #f0fffa;
   border-left: 6px solid var(--main-color);
@@ -144,14 +119,12 @@ main {
   align-items: center;
   gap: 12px;
 }
-
 input, select, button {
   font-family: inherit;
   font-size: 1em;
   box-sizing: border-box;
   border-radius: 10px;
 }
-
 input, select {
   border: 1.5px solid #b2fff0;
   padding: 10px 14px;
@@ -166,7 +139,6 @@ input:focus, select:focus {
   border-color: #6fedd1;
   outline: none;
 }
-
 button, .paw-action-btn {
   background: linear-gradient(90deg, #6fedd1 70%, #b2fff0 100%);
   color: var(--text-dark);
@@ -191,7 +163,6 @@ button[disabled], .paw-action-btn[disabled] {
   color: #a2b2b2;
   cursor: not-allowed;
 }
-
 nav.bottom {
   position: fixed;
   bottom: 0;
@@ -246,7 +217,6 @@ nav.bottom a.active {
   font-size: 13px;
   font-family: inherit;
 }
-
 .settings-section {
   margin: 0 auto 25px auto;
   max-width: 440px;
@@ -256,7 +226,6 @@ nav.bottom a.active {
   box-shadow: 0 2px 8px rgba(111, 237, 209, 0.13);
   text-align: center;
 }
-
 .logout-btn {
   margin: 28px auto 0 auto !important;
   display: block;
@@ -272,7 +241,6 @@ nav.bottom a.active {
   transition: background 0.18s, color 0.18s;
   text-align: center;
 }
-
 @media (max-width: 600px) {
   html { font-size: 15px; }
   header { padding: 2vw 1vw; }
@@ -281,9 +249,7 @@ nav.bottom a.active {
   .card { padding: 5vw 2vw; }
   .nav-icon-img { min-width: 22px; min-height: 22px; }
 }
-
 .demo-hide { display: none !important; }
-
 @keyframes fadeInUp {
   from { opacity: 0; transform: translateY(18px);}
   to { opacity: 1; transform: translateY(0);}
