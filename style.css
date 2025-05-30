@@ -96,7 +96,7 @@ header {
   border-radius: 13px;
   box-shadow: 0 2px 13px #6fedd180;
   padding: 8px 0;
-  z-index: 100;
+  z-index: 2005;
 }
 .user-menu-item {
   padding: 13px 20px;
