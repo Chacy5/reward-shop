@@ -1,755 +1,725 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Talk to my paw</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat+Alternates:wght@400;600&display=swap" rel="stylesheet">
+  <title>Paw Reward Shop</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
   <style>
-    :root {
-      --main-color: #6fedd1;
-      --accent-color: #b2fff0;
-      --text-dark: #065f54;
-      --bg-light: #eafff8;
-      --color-daily: #b2fff0;
-      --color-weekly: #fff4c3;
-      --color-event: #ffe1fa;
-      --card-bg: #f0fffa;
-      --nav-height: 70px;
-      --radius: 14px;
-      --shadow: 0 3px 10px 0 #0001;
-      --transition: .2s;
-    }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    html, body {
-      width: 100vw;
-      min-height: 100vh;
-      background: var(--bg-light);
-      color: var(--text-dark);
-      font-family: 'Montserrat Alternates', sans-serif;
-      overflow-x: hidden;
-    }
-    body {
-      min-height: 100vh;
-      width: 100vw;
-      display: flex;
-      flex-direction: column;
-      justify-content: flex-start;
-    }
-    header {
-      width: 100vw;
-      background: var(--main-color);
-      padding: 10px 16px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      box-sizing: border-box;
-      border-bottom: 2px solid #57e1c0;
-      min-height: 60px;
-    }
-    .logo-wrap { display: flex; align-items: center; }
-    .logo-img, .icon-size {
-      width: 40px;
-      height: 40px;
-      object-fit: contain;
-      border-radius: 8px;
-      background: #fff;
-      box-shadow: var(--shadow);
-      margin-right: 8px;
-    }
-    .logo-img { background: transparent; box-shadow: none; }
-    #paw-balance {
-      font-size: 1.2em;
-      flex: 1 1 auto;
-      text-align: center;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .paw-balance-text {
-      font-size: 1.2em;
-      font-weight: 600;
-      background: #eafff8;
-      border-radius: 12px;
-      padding: 0.2em 0.9em;
-      border: 2px solid #b2fff0;
-      color: var(--text-dark);
-      box-shadow: var(--shadow);
-      display: flex;
-      align-items: center;
-      gap: 4px;
-    }
-    #user-info {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 1rem;
-    }
-    #show-login-btn, #signout-btn {
-      background: transparent;
-      border: none;
-      border-radius: 8px;
-      font-size: 1.3em;
-      padding: 2px 8px 2px 2px;
-      font-weight: 700;
-      cursor: pointer;
-      color: var(--main-color);
-      transition: color 0.15s;
-    }
-    #show-login-btn:hover, #signout-btn:hover { color: #025a4a; }
-    #user-profile {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    #user-name {
-      font-weight: 600;
-      font-size: 1.05em;
-    }
-    main {
-      flex: 1 1 auto;
-      width: 100vw;
-      max-width: 100vw;
-      min-height: 0;
-      background: var(--bg-light);
-      box-sizing: border-box;
-      overflow-x: hidden;
-      position: relative;
-      padding-bottom: var(--nav-height);
-      transition: padding-bottom var(--transition);
-    }
-    .page {
-      display: none;
-      min-width: 0;
-      width: 100vw;
-      min-height: 70vh;
-      box-sizing: border-box;
-    }
+    body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; background: #f8f8f8; color: #222; }
+    nav.bottom { position: fixed; bottom: 0; left: 0; right: 0; background: #fff; display: flex; border-top: 1px solid #ddd; }
+    nav.bottom a { flex: 1; text-align: center; padding: 13px 0; color: #222; text-decoration: none; font-weight: bold; transition: background .2s;}
+    nav.bottom a.active { background: #ede5f9; color: #8a3cff; }
+    .page { display: none; padding: 20px 10px 62px 10px; max-width: 540px; margin: auto; }
     .page.active { display: block; }
-    .section {
-      background: var(--card-bg);
-      margin: 24px 12px 24px 12px;
-      border-radius: var(--radius);
-      padding: 24px 18px;
-      box-sizing: border-box;
-      box-shadow: var(--shadow);
-      margin-bottom: 2vh;
-    }
-    .loader {
-      position: fixed;
-      left: 0; top: 0; width: 100vw; height: 100vh;
-      background: #0002;
-      z-index: 9999;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 2em;
-      color: var(--main-color);
-      font-weight: 600;
-    }
-    /* Навигация */
-    nav {
-      position: fixed;
-      left: 0; right: 0; bottom: 0;
-      height: var(--nav-height);
-      background: #fff;
-      border-top: 2px solid #b2fff0;
-      display: flex;
-      justify-content: space-around;
-      align-items: center;
-      z-index: 100;
-      box-shadow: 0 -4px 10px #0002;
-    }
-    nav button {
-      background: none;
-      border: none;
-      outline: none;
-      padding: 0;
-      margin: 0 8px;
-      cursor: pointer;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      color: var(--main-color);
-      font-size: 0.85em;
-      font-weight: 600;
-      transition: color var(--transition);
-      border-radius: 8px;
-      min-width: 48px;
-    }
-    nav button.active,
-    nav button:focus-visible {
-      color: var(--text-dark);
-      background: var(--accent-color);
-    }
-    nav .nav-icon {
-      width: 32px;
-      height: 32px;
-      margin-bottom: 2px;
-      display: block;
-      object-fit: contain;
-      background: transparent;
-      border-radius: 5px;
-    }
-    /* Карточки, кнопки */
-    .card {
-      background: var(--card-bg);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      padding: 16px 14px;
-      margin-bottom: 18px;
-      display: flex;
-      align-items: center;
-      gap: 18px;
-      transition: background .15s;
-    }
-    .card .emoji {
-      font-size: 2em;
-      margin-right: 8px;
-    }
-    .card .desc {
-      flex: 1;
-      font-size: 1em;
-    }
-    .paw-action-btn {
-      background: var(--main-color);
-      color: var(--text-dark);
-      border: none;
-      border-radius: 10px;
-      font-size: 1.08em;
-      padding: 8px 18px;
-      margin: 8px 0;
-      font-weight: 600;
-      cursor: pointer;
-      box-shadow: var(--shadow);
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      transition: background .18s;
-    }
-    .paw-action-btn:hover { background: #57e1c0; }
-    .wide-btn { width: 100%; justify-content: center; }
-    /* Модалки */
-    .modal-bg {
-      position: fixed;
-      left: 0; top: 0; right: 0; bottom: 0;
-      background: #0005;
-      z-index: 1100;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .modal {
-      background: #fff;
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      max-width: 350px;
-      width: 90vw;
-      padding: 20px;
-      position: relative;
-    }
-    .modal-close {
-      position: absolute;
-      right: 12px; top: 12px;
-      background: none;
-      border: none;
-      font-size: 1.3em;
-      cursor: pointer;
-      color: var(--main-color);
-      z-index: 2;
-    }
-    .modal-header {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin-bottom: 18px;
-    }
-    .modal-header img { background: #eafff8; }
-    .input-group label {
-      display: block;
-      margin-bottom: 12px;
-      font-size: 1em;
-    }
-    .input-group span {
-      display: block;
-      margin-bottom: 2px;
-      font-size: 0.98em;
-      color: var(--main-color);
-      font-weight: 600;
-    }
-    .input-group input {
-      width: 100%;
-      padding: 8px 8px;
-      border: 1.5px solid var(--main-color);
-      border-radius: 8px;
-      font-size: 1em;
-      margin-bottom: 2px;
-      outline: none;
-      margin-top: 2px;
-      background: #f9fffd;
-      transition: border var(--transition);
-    }
-    .input-group input:focus { border-color: #025a4a; }
-    /* Таблицы, списки, мелочи */
-    .table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 10px;
-      font-size: 0.99em;
-    }
-    .table th, .table td {
-      border: 1px solid #d7f4ec;
-      padding: 7px 4px;
-      text-align: left;
-    }
-    .flex-row {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .icon-btn {
-      background: none;
-      border: none;
-      padding: 0;
-      margin: 0;
-      cursor: pointer;
-      color: var(--main-color);
-      border-radius: 6px;
-      transition: background .18s;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 32px; height: 32px;
-    }
-    .icon-btn:hover, .icon-btn:focus-visible { background: #eafff8; }
-    /* Media */
-    @media (max-width: 600px) {
-      .section, .card { padding: 14px 6vw; }
-      header { padding: 8px 4vw; }
-      nav { font-size: 0.91em; }
-      .logo-img, .icon-size, nav .nav-icon { width: 32px; height: 32px; }
-      .modal { max-width: 98vw; }
-    }
+    .filter-bar { padding: 8px 0; margin-bottom: 8px; display: flex; gap: 20px; justify-content: center; }
+    .section { margin: 16px 0 26px 0; }
+    .card { background: #fff; border-radius: 12px; box-shadow: 0 2px 8px #0001; padding: 15px; margin-bottom: 14px; }
+    button, .paw-action-btn { font-size: 1rem; border: none; border-radius: 8px; padding: 6px 16px; background: #ede5f9; color: #8a3cff; font-weight: bold; cursor: pointer; transition: background .2s; }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    #paw-balance { position: fixed; top: 12px; right: 12px; background: #fffbe7; color: #222; border-radius: 9px; box-shadow: 0 1px 8px #0002; display: flex; gap: 8px; align-items: center; padding: 6px 16px; font-size: 1.1em;}
+    #user-profile { position: fixed; top: 12px; left: 12px; background: #f1f3fa; border-radius: 9px; display: flex; gap: 10px; align-items: center; padding: 5px 13px; }
+    #show-login-btn { position: fixed; top: 10px; left: 13px; border-radius: 8px; background: #b2d7ff; color: #2675b8; border: none; font-weight: bold; padding: 8px 18px; cursor: pointer; }
+    .modal-bg { position: fixed; left:0; top:0; right:0; bottom:0; background: #0005; display: none; align-items: center; justify-content: center; z-index: 100; }
+    .modal { background: #fff; border-radius: 16px; width: 320px; max-width: 96vw; padding: 28px 22px 19px 22px; box-shadow: 0 8px 32px #0002; }
+    .modal label { display: block; margin-bottom: 10px; }
+    .modal input, .modal select { width: 100%; border: 1px solid #ddd; border-radius: 7px; padding: 8px 10px; margin-top: 4px; margin-bottom: 14px; font-size: 1em; }
+    .modal .actions { text-align: right; }
+    .logout-btn { margin-top: 30px; display: block; background: #ffe0e0; color: #b10000; border: none; padding: 10px 22px; border-radius: 7px; font-weight: bold; }
+    .settings-section { margin-bottom: 32px; }
+    #loader { position:fixed; left:0; right:0; top:0; bottom:0; background:#fff; z-index:10000; display:flex;align-items:center;justify-content:center; font-size:1.7em; color:#aaa; }
+    .desc { color: #444; font-size: 0.97em; }
+    .flex { display:flex; align-items: flex-start; justify-content: space-between; }
+    @media (max-width: 700px) { .page { padding: 18px 2vw 68px 2vw; } }
   </style>
 </head>
 <body>
-  <div class="loader" id="loader" style="display:none">Loading...</div>
-  <header>
-    <span class="logo-wrap">
-      <img src="image1" alt="Логотип" class="logo-img" />
-    </span>
-    <span id="paw-balance" style="display:none;">
-      <span class="paw-balance-text">🐾 <span id="paw-balance-val">0</span></span>
-    </span>
-    <span id="user-info">
-      <button id="show-login-btn" title="Войти" type="button">
-        <img src="image2" alt="User" class="icon-size"/>
-      </button>
-      <span id="user-profile" style="display:none;">
-        <span id="user-name"></span>
-        <button id="signout-btn" type="button" style="display:none;">
-          <img src="image2" alt="Выйти" class="icon-size"/>
-        </button>
-      </span>
-    </span>
-  </header>
-  <main>
-    <div id="page-main" class="page active"></div>
-    <div id="page-shop" class="page"></div>
-    <div id="page-tasks" class="page"></div>
-    <div id="page-claimed" class="page"></div>
-    <div id="page-settings" class="page"></div>
-  </main>
-  <nav>
-    <button id="nav-main" class="active" title="Главная">
-      <img src="image3" class="nav-icon" alt="Дом" /><span>Главная</span>
-    </button>
-    <button id="nav-shop" title="Магазин">
-      <img src="image4" class="nav-icon" alt="Магазин" /><span>Магазин</span>
-    </button>
-    <button id="nav-tasks" title="Квесты">
-      <img src="image5" class="nav-icon" alt="Квесты" /><span>Квесты</span>
-    </button>
-    <button id="nav-claimed" title="Награды">
-      <img src="image6" class="nav-icon" alt="Награды" /><span>Награды</span>
-    </button>
-    <button id="nav-settings" title="Настройки">
-      <img src="image7" class="nav-icon" alt="Настройки" /><span>Настройки</span>
-    </button>
+  <div id="loader">Loading...</div>
+  <nav class="bottom">
+    <a data-page="main" class="active">Main</a>
+    <a data-page="tasks">Quests</a>
+    <a data-page="shop">Shop</a>
+    <a data-page="claimed">Claimed</a>
+    <a data-page="settings">Settings</a>
   </nav>
-  <!-- Модальное окно логина -->
-  <div id="login-modal-bg" class="modal-bg" style="display:none;">
-    <div class="modal card-modal">
-      <button class="modal-close" type="button" onclick="closeLoginModal()">
-        <!-- SVG крестик из flaticon -->
-        <svg width="28" height="28" class="icon-svg icon-size" viewBox="0 0 24 24" fill="none"><path d="M5.5 5.5L18.5 18.5M5.5 18.5L18.5 5.5" stroke="#065f54" stroke-width="2" stroke-linecap="round"/></svg>
-      </button>
-      <div class="modal-header">
-        <img src="image2" class="icon-size" alt="User"/>
-        <h2>Вход</h2>
-      </div>
-      <div class="input-group">
-        <label>
-          <span>Логин</span>
-          <input type="text" id="login-username" autocomplete="username" placeholder="Имя пользователя" />
-        </label>
-        <label>
-          <span>Пароль</span>
-          <input type="password" id="login-password" autocomplete="current-password" placeholder="Пароль" />
-        </label>
-        <button class="paw-action-btn wide-btn" type="button" onclick="doLogin()">
-          <img src="image2" class="icon-size" alt="User" style="vertical-align:middle;"/> Войти
-        </button>
-        <div style="text-align:center;margin-top:8px;">
-          <span id="login-err" style="color:#c00;font-size:0.97em;"></span>
-        </div>
+  <div id="paw-balance" style="display:none;">
+    <span>Paw points:</span> <span id="paw-balance-val">0</span>
+  </div>
+  <div id="user-profile" style="display:none;">
+    <span id="user-name"></span>
+    <button id="signout-btn" style="display:none;">Sign out</button>
+  </div>
+  <button id="show-login-btn">Sign in</button>
+  <!-- Pages -->
+  <div class="page active" id="page-main"></div>
+  <div class="page" id="page-tasks"></div>
+  <div class="page" id="page-shop"></div>
+  <div class="page" id="page-claimed"></div>
+  <div class="page" id="page-settings"></div>
+  <!-- Modals -->
+  <div class="modal-bg" id="login-modal-bg">
+    <div class="modal">
+      <h2 style="margin-top:0;">Sign in</h2>
+      <label>
+        Username
+        <input type="text" id="login-username" autocomplete="username" />
+      </label>
+      <label>
+        Password
+        <input type="password" id="login-password" autocomplete="current-password" />
+      </label>
+      <div id="login-err" style="color:#c00;min-height:18px;margin-bottom:7px;"></div>
+      <div class="actions">
+        <button onclick="doLogin()">Sign in</button>
+        <button style="background:#f1f3fa;color:#222;" onclick="showRegister()">Register</button>
+        <button style="background:#eee;color:#222;" onclick="closeLoginModal()">Cancel</button>
       </div>
     </div>
   </div>
-  <!-- Модалка подтверждения -->
-  <div id="confirm-modal-bg" class="modal-bg" style="display:none;">
-    <div class="modal" id="confirm-modal">
-      <div id="confirm-modal-content"></div>
-      <div style="margin-top:18px;display:flex;gap:10px;justify-content:flex-end;">
-        <button class="paw-action-btn" id="confirm-cancel-btn">Отмена</button>
-        <button class="paw-action-btn" id="confirm-ok-btn">ОК</button>
+  <div class="modal-bg" id="register-modal-bg">
+    <div class="modal">
+      <h2 style="margin-top:0;">Register</h2>
+      <label>
+        Username
+        <input type="text" id="register-username" autocomplete="username" />
+      </label>
+      <label>
+        Password
+        <input type="password" id="register-password" autocomplete="new-password" />
+      </label>
+      <div id="register-err" style="color:#c00;min-height:18px;margin-bottom:7px;"></div>
+      <div class="actions">
+        <button onclick="doRegister()">Register</button>
+        <button style="background:#eee;color:#222;" onclick="closeRegisterModal()">Cancel</button>
       </div>
     </div>
   </div>
-  <div id="toast" style="display:none;position:fixed;left:50%;bottom:80px;transform:translateX(-50%);z-index:1200;background:#fff;padding:12px 26px;border-radius:14px;box-shadow:0 2px 18px #0003;font-size:1.07em;font-weight:600;color:var(--main-color);"></div>
-  <!-- SVG-иконки интерфейсные встраиваются ниже по мере необходимости через <svg><use href="#svg-id"/></svg> -->
+  <div class="modal-bg" id="quest-modal-bg">
+    <div class="modal">
+      <h2 style="margin-top:0;">New Quest</h2>
+      <label>
+        Type
+        <select id="questType">
+          <option value="daily">Daily</option>
+          <option value="weekly">Weekly</option>
+          <option value="event">Event</option>
+        </select>
+      </label>
+      <label>
+        Name
+        <input type="text" id="taskName" maxlength="40" />
+      </label>
+      <label>
+        Emoji (optional)
+        <input type="text" id="taskEmoji" maxlength="2" />
+      </label>
+      <label>
+        Description
+        <input type="text" id="taskDesc" maxlength="100" />
+      </label>
+      <label>
+        Points
+        <input type="number" id="taskPoints" min="1" max="100" />
+      </label>
+      <div class="actions">
+        <button onclick="addTask()">Add Quest</button>
+        <button style="background:#eee;color:#222;" onclick="closeQuestModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
+  <div class="modal-bg" id="reward-modal-bg">
+    <div class="modal">
+      <h2 style="margin-top:0;">New Reward</h2>
+      <label>
+        Name
+        <input type="text" id="rewardName" maxlength="40" />
+      </label>
+      <label>
+        Emoji (optional)
+        <input type="text" id="rewardEmoji" maxlength="2" />
+      </label>
+      <label>
+        Description
+        <input type="text" id="rewardDesc" maxlength="100" />
+      </label>
+      <label>
+        Cost (paw points)
+        <input type="number" id="rewardCost" min="1" max="100" />
+      </label>
+      <div class="actions">
+        <button onclick="addReward()">Add Reward</button>
+        <button style="background:#eee;color:#222;" onclick="closeRewardModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
+  <!-- SVG for "Received" in Claimed Rewards -->
   <svg style="display:none;">
-    <symbol id="icon-edit" viewBox="0 0 24 24"><path d="M4 21h4.586a1 1 0 0 0 .707-.293l10.414-10.414a2 2 0 0 0 0-2.828l-2.172-2.172a2 2 0 0 0-2.828 0L4.293 15.879A1 1 0 0 0 4 16.586V21z" fill="#6fedd1" stroke="#065f54" stroke-width="1.5"/><path d="M15 6l3 3" stroke="#065f54" stroke-width="1.5" stroke-linecap="round"/></symbol>
-    <symbol id="icon-delete" viewBox="0 0 24 24"><path d="M6 7h12M10 11v6M14 11v6M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2" stroke="#065f54" stroke-width="1.5"/><rect x="6" y="7" width="12" height="13" rx="2" fill="#eafff8" stroke="#6fedd1" stroke-width="1.5"/></symbol>
-    <symbol id="icon-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" stroke="#065f54" stroke-width="2" stroke-linecap="round"/></symbol>
-    <symbol id="icon-check" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" stroke="#065f54" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></symbol>
-    <symbol id="icon-reload" viewBox="0 0 24 24"><path d="M4 4v5h5M20 20v-5h-5M10 19a7 7 0 0 1-4-6c0-3.87 3.13-7 7-7 1.61 0 3.09.55 4.28 1.47" stroke="#6fedd1" stroke-width="1.5" fill="none"/></symbol>
-    <symbol id="icon-award" viewBox="0 0 24 24"><circle cx="12" cy="8" r="5" fill="#ffe1fa" stroke="#065f54" stroke-width="1.5"/><path d="M7 15v5l5-3 5 3v-5" stroke="#065f54" stroke-width="1.5" fill="#fff4c3"/></symbol>
-    <symbol id="icon-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6" stroke="#065f54" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="paw" viewBox="0 0 24 24">
+      <circle cx="6.5" cy="7.5" r="2.5"/>
+      <circle cx="17.5" cy="7.5" r="2.5"/>
+      <ellipse cx="12" cy="16" rx="6" ry="5"/>
+      <circle cx="12" cy="4" r="2"/>
+    </symbol>
   </svg>
   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
-    import { getFirestore, doc, setDoc, onSnapshot, getDoc, updateDoc, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
+import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
 
-    // === Firebase Config ===
-    const firebaseConfig = {
-      apiKey: "AIzaSyBDHjCE7CYC_jxL7EPjUApVvrd8avHmcNA",
-      authDomain: "talk-to-my-paw.firebaseapp.com",
-      projectId: "talk-to-my-paw",
-      storageBucket: "talk-to-my-paw.appspot.com",
-      messagingSenderId: "1023228484299",
-      appId: "1:1023228484299:web:df2f42b4bebff7c82b194e",
-      measurementId: "G-X51RCW3ND0"
-    };
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
+const firebaseConfig = {
+  apiKey: "AIzaSyBDHjCE7CYC_jxL7EPjUApVvrd8avHmcNA",
+  authDomain: "talk-to-my-paw.firebaseapp.com",
+  projectId: "talk-to-my-paw",
+  storageBucket: "talk-to-my-paw.appspot.com",
+  messagingSenderId: "1023228484299",
+  appId: "1:1023228484299:web:df2f42b4bebff7c82b194e",
+  measurementId: "G-X51RCW3ND0"
+};
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
 
-    // ==== Переменные ====
-    let currentUser = localStorage.getItem('pawCurrentUser') || "";
-    let groupId = "demo-family";
-    let allData = {
-      users: {},
-      quests: [],
-      completed: [],
-      rewards: [],
-      claimed: [],
-      points: {}
-    };
-    let isInitialSync = true;
-    let currentPage = "main";
-    let isAdmin = false;
+let currentUser = localStorage.getItem('pawCurrentUser') || "";
+let groupId = "demo-family";
+let allData = {
+  users: {},
+  quests: [],
+  completed: [],
+  rewards: [],
+  claimed: [],
+  points: {}
+};
+let isInitialSync = true;
+let currentPage = "main";
 
-    // ==== Firestore ====
-    async function syncToFirebase() {
-      await setDoc(doc(db, "groups", groupId), allData);
-    }
-    function listenFromFirebase() {
-      onSnapshot(doc(db, "groups", groupId), (docSnap) => {
-        if (docSnap.exists()) {
-          const prevUser = currentUser;
-          Object.assign(allData, docSnap.data());
-          isInitialSync = false;
-          if (prevUser && allData.users[prevUser]) {
-            currentUser = prevUser;
-            localStorage.setItem('pawCurrentUser', currentUser);
-          }
-          renderAll();
-        }
-      });
-    }
-    async function checkAndAddDemoData() {
-      const docSnap = await getDoc(doc(db, "groups", groupId));
-      if (!docSnap.exists()) {
+function syncToFirebase() { setDoc(doc(db, "groups", groupId), allData); }
+function listenFromFirebase() {
+  onSnapshot(doc(db, "groups", groupId), (docSnap) => {
+    if (docSnap.exists()) {
+      const prevUser = currentUser;
+      Object.assign(allData, docSnap.data());
+      if (isInitialSync && Object.keys(allData.users).length === 0 && allData.quests.length === 0 && allData.rewards.length === 0) {
         addDemoData();
-        await syncToFirebase();
       }
-    }
-    listenFromFirebase();
-    checkAndAddDemoData();
-
-    // ==== Демоданные ====
-    function addDemoData() {
-      allData.quests = [
-        { type: 'daily', name: 'Покормить кота', emoji: '🧑‍🍳', desc: 'Дать завтрак коту', pts: 3 },
-        { type: 'daily', name: 'Утренняя прогулка', emoji: '🚶‍♂️', desc: '10 минут в парке', pts: 2 },
-        { type: 'weekly', name: 'Убрать комнату', emoji: '🧹', desc: 'Навести порядок в субботу', pts: 5 },
-        { type: 'weekly', name: 'Позвонить бабушке', emoji: '☎️', desc: 'Поговорить с бабушкой', pts: 4 },
-        { type: 'event', name: 'Сюрприз на день рождения', emoji: '🎉', desc: 'Организовать сюрприз', pts: 10 }
-      ];
-      allData.completed = [
-        { username: "demo", type: 'daily', name: 'Почистить зубы', emoji: '🦷', desc: 'Утром и вечером', pts: 1, completedAt: new Date(Date.now() - 86400000).toISOString() }
-      ];
-      allData.rewards = [
-        { name: 'Шоколадка', emoji: '🍫', desc: 'Сладкое угощение', cost: 6 },
-        { name: 'Плюшка', emoji: '🍩', desc: 'Булочка к чаю', cost: 4 },
-        { name: 'Мультик', emoji: '📺', desc: '30 минут мультиков', cost: 7 }
-      ];
-      allData.users = { demo: { name: "Демо" } };
-      allData.points = { demo: 10 };
-      allData.claimed = [];
-    }
-
-    // ==== Рендер и роутинг ====
-    const pageIds = ["main", "shop", "tasks", "claimed", "settings"];
-    function renderAll() {
-      renderHeader();
-      renderMain();
-      renderShop();
-      renderTasks();
-      renderClaimed();
-      renderSettings();
-      highlightNav();
-    }
-    function renderHeader() {
-      // Баланс
-      const bal = allData.points[currentUser] || 0;
-      document.getElementById("paw-balance-val").textContent = bal;
-      document.getElementById("paw-balance").style.display = currentUser ? "" : "none";
-      // Профиль
-      const userProfile = document.getElementById("user-profile");
-      if (currentUser) {
-        document.getElementById("show-login-btn").style.display = "none";
-        userProfile.style.display = "flex";
-        document.getElementById("user-name").textContent = allData.users[currentUser]?.name || currentUser;
-        document.getElementById("signout-btn").style.display = "";
-      } else {
-        document.getElementById("show-login-btn").style.display = "";
-        userProfile.style.display = "none";
+      isInitialSync = false;
+      if (prevUser && allData.users[prevUser]) {
+        currentUser = prevUser;
+        localStorage.setItem('pawCurrentUser', currentUser);
       }
-    }
-    function renderMain() {
-      const el = document.getElementById("page-main");
-      el.innerHTML = `
-        <div class="section">
-          <div style="display:flex;align-items:center;gap:10px; margin-bottom:12px;">
-            <img src="image1" alt="логотип" class="logo-img" style="width:48px;height:48px;">
-            <span style="font-size:1.25em;font-weight:600;">Talk to my paw</span>
-          </div>
-          <div style="margin-top:12px;font-size:1.1em;">
-            ${currentUser 
-              ? `Привет, <b>${allData.users[currentUser]?.name || currentUser}</b>!<br>
-                  Количество 🐾: <b>${allData.points[currentUser] ?? 0}</b>`
-              : `Добро пожаловать в семейный трекер заданий, квестов и наград!<br>
-                <span style="font-size:0.96em;color:#088c6e;">Войдите, чтобы начать зарабатывать 🐾 и получать призы!</span>`}
-          </div>
-        </div>
-        ${currentUser ? `
-        <div class="section" style="text-align:center;">
-          <div style="margin-bottom:14px;"><b>Быстрые действия</b></div>
-          <button class="paw-action-btn" onclick="showPage('tasks')"><svg width="24" height="24"><use href="#icon-plus"/></svg> Новое задание</button>
-          <button class="paw-action-btn" onclick="showPage('shop')"><svg width="24" height="24"><use href="#icon-award"/></svg> Получить награду</button>
-        </div>
-        ` : ''}
-      `;
-    }
-    function renderShop() {
-      const el = document.getElementById("page-shop");
-      let html = `<div class="section"><b>Магазин наград</b></div>`;
-      html += allData.rewards.length
-        ? allData.rewards.map((rw, i) => `
-            <div class="card">
-              <span class="emoji">${rw.emoji}</span>
-              <span class="desc"><b>${rw.name}</b><br><span style="font-size:0.97em;">${rw.desc}</span></span>
-              <span style="min-width:60px;text-align:right;"><svg width="20" height="20"><use href="#icon-award"/></svg> ${rw.cost}</span>
-              ${currentUser ? `<button class="paw-action-btn" style="padding:6px 12px;" onclick="claimReward(${i})">Взять</button>` : ""}
-            </div>
-          `).join("")
-        : `<div class="section">Пока нет наград.</div>`;
-      el.innerHTML = html;
-    }
-    function renderTasks() {
-      const el = document.getElementById("page-tasks");
-      let html = `<div class="section"><b>Квесты и задания</b></div>`;
-      if (!allData.quests.length) {
-        html += `<div class="section">Нет заданий.</div>`;
-      } else {
-        html += allData.quests.map((q, idx) => `
-          <div class="card">
-            <span class="emoji">${q.emoji}</span>
-            <span class="desc"><b>${q.name}</b><br><span style="font-size:0.97em;">${q.desc}</span></span>
-            <span style="min-width:50px;"><svg width="20" height="20"><use href="#icon-award"/></svg> ${q.pts}</span>
-            ${currentUser ? `<button class="paw-action-btn" style="padding:6px 12px;" onclick="completeQuest(${idx})">Выполнить</button>` : ""}
-          </div>
-        `).join("");
-      }
-      el.innerHTML = html;
-    }
-    function renderClaimed() {
-      const el = document.getElementById("page-claimed");
-      let html = `<div class="section"><b>Полученные награды</b></div>`;
-      const claimed = allData.claimed.filter(x => x.username === currentUser);
-      if (!claimed.length) {
-        html += `<div class="section">Пока нет полученных наград.</div>`;
-      } else {
-        html += claimed.slice().reverse().map(c => `
-          <div class="card">
-            <span class="emoji">${c.emoji}</span>
-            <span class="desc"><b>${c.name}</b><br><span style="font-size:0.97em;">${c.desc}</span></span>
-            <span style="min-width:60px;text-align:right;">${new Date(c.claimedAt).toLocaleDateString()}</span>
-          </div>
-        `).join("");
-      }
-      el.innerHTML = html;
-    }
-    function renderSettings() {
-      const el = document.getElementById("page-settings");
-      let html = `<div class="section"><b>Настройки и информация</b></div>`;
-      if (currentUser) html += `
-        <div class="section">
-          <div><b>Ваш логин:</b> ${currentUser}</div>
-          <button class="paw-action-btn" onclick="signOut()"><svg width="24" height="24"><use href="#icon-reload"/></svg> Выйти</button>
-        </div>`;
-      else html += `<div class="section">Войдите, чтобы управлять настройками.</div>`;
-      // Для администратора (первый пользователь)
-      if (currentUser === "demo") html += `
-        <div class="section">
-          <b>Админ-раздел</b><br>
-          <button class="paw-action-btn" onclick="resetDemoData()">Сбросить все данные</button>
-        </div>
-      `;
-      el.innerHTML = html;
-    }
-    function highlightNav() {
-      pageIds.forEach(id => {
-        document.getElementById("page-" + id).classList.toggle("active", id === currentPage);
-        document.getElementById("nav-" + id).classList.toggle("active", id === currentPage);
-      });
-    }
-    function showPage(id) {
-      currentPage = id;
-      highlightNav();
-      renderAll();
-      window.scrollTo(0, 0);
-    }
-    window.showPage = showPage; // для inline onclick
-
-    // ==== Навигация ====
-    pageIds.forEach(id => {
-      document.getElementById("nav-" + id).addEventListener("click", () => showPage(id));
-    });
-
-    // ==== Квесты и награды ====
-    window.completeQuest = function(idx) {
-      if (!currentUser) return showLoginModal();
-      const quest = allData.quests[idx];
-      if (!quest) return;
-      // Добавить в выполненные
-      allData.completed.push({
-        username: currentUser,
-        ...quest,
-        completedAt: new Date().toISOString()
-      });
-      // Баллы
-      allData.points[currentUser] = (allData.points[currentUser] || 0) + quest.pts;
-      showToast("Задание выполнено! +🐾" + quest.pts);
-      syncToFirebase();
-    }
-    window.claimReward = function(idx) {
-      if (!currentUser) return showLoginModal();
-      const rw = allData.rewards[idx];
-      if (!rw) return;
-      const pts = allData.points[currentUser] || 0;
-      if (pts < rw.cost) return showToast("Недостаточно 🐾!");
-      // Списать баллы, добавить в claimed
-      allData.points[currentUser] -= rw.cost;
-      allData.claimed.push({
-        username: currentUser,
-        ...rw,
-        claimedAt: new Date().toISOString()
-      });
-      showToast("Получена награда: " + rw.name);
-      syncToFirebase();
-    }
-    // ==== Аутентификация ====
-    function showLoginModal() {
-      document.getElementById("login-modal-bg").style.display = "";
-      document.getElementById("login-err").textContent = "";
-      document.getElementById("login-username").value = "";
-      document.getElementById("login-password").value = "";
-      setTimeout(() => document.getElementById("login-username").focus(), 100);
-    }
-    function closeLoginModal() {
-      document.getElementById("login-modal-bg").style.display = "none";
-    }
-    window.closeLoginModal = closeLoginModal;
-    window.doLogin = function() {
-      const username = document.getElementById("login-username").value.trim();
-      const password = document.getElementById("login-password").value;
-      if (username.length < 2) {
-        document.getElementById("login-err").textContent = "Введите имя пользователя";
-        return;
-      }
-      // Simple local password check (for demo only)
-      if (username === "demo" && password !== "demo") {
-        document.getElementById("login-err").textContent = "Пароль неверный";
-        return;
-      }
-      // Если нового нет - создаём
-      if (!allData.users[username]) {
-        allData.users[username] = { name: username };
-        allData.points[username] = 0;
-      }
-      currentUser = username;
-      localStorage.setItem('pawCurrentUser', currentUser);
-      closeLoginModal();
-      showToast("Вход выполнен!");
-      syncToFirebase();
-    }
-    window.signOut = function() {
-      currentUser = "";
-      localStorage.removeItem('pawCurrentUser');
-      showToast("Выход выполнен");
       renderAll();
     }
-    document.getElementById("show-login-btn").onclick = showLoginModal;
-    document.getElementById("signout-btn").onclick = signOut;
+  });
+}
+listenFromFirebase();
 
-    // ==== Сброс демо-данных (для admin/demo) ====
-    window.resetDemoData = async function() {
-      if (currentUser !== "demo") return;
-      addDemoData();
-      await syncToFirebase();
-      showToast("Данные сброшены!");
-    }
+function addDemoData() {
+  allData.quests = [
+    { type: 'daily', name: 'Feed the cat', emoji: '🧑‍🍳', desc: 'Give breakfast to your cat', pts: 3 },
+    { type: 'daily', name: 'Morning walk', emoji: '🚶‍♂️', desc: '10 min walk in the park', pts: 2 },
+    { type: 'weekly', name: 'Clean up room', emoji: '🧹', desc: 'Tidy up your room on Saturday', pts: 5 },
+    { type: 'weekly', name: 'Call grandma', emoji: '☎️', desc: 'Check in on your grandma', pts: 4 },
+    { type: 'event', name: 'Birthday surprise', emoji: '🎉', desc: 'Organize a surprise for a friend', pts: 10 }
+  ];
+  allData.completed = [
+    { username: "demo", type: 'daily', name: 'Brush teeth', emoji: '🦷', desc: 'Morning and evening', pts: 1, completedAt: new Date(Date.now() - 86400000).toISOString() }
+  ];
+  allData.rewards = [
+    { name: 'Chocolate bar', emoji: '🍫', desc: 'Sweet treat', cost: 6 },
+    { name: 'Coffee break', emoji: '☕', desc: 'Buy yourself a nice coffee', cost: 8 },
+    { name: 'Movie night', emoji: '🎬', desc: 'Watch a movie with popcorn', cost: 14 },
+    { name: 'Game hour', emoji: '🎮', desc: 'Play your favorite game for 1 hour', cost: 10 },
+    { name: 'Cute sticker', emoji: '🧸', desc: 'Get a cute sticker for your notebook', cost: 2 }
+  ];
+  allData.claimed = [
+    { username: "demo", name: 'Donut', emoji: '🍩', desc: 'Yummy donut', cost: 5, claimedAt: new Date(Date.now() - 3600 * 1000 * 6).toISOString(), done: true }
+  ];
+  allData.points = { demo: 11 };
+  allData.users.demo = { password: "demo", role: "user" };
+  syncToFirebase();
+}
 
-    // ==== Модалки подтверждения, тосты ====
-    function showToast(text, ms=2200) {
-      const toast = document.getElementById("toast");
-      toast.textContent = text;
-      toast.style.display = "";
-      setTimeout(() => { toast.style.display = "none"; }, ms);
-    }
+function setUser(login) {
+  currentUser = login;
+  localStorage.setItem('pawCurrentUser', login);
+  if (!allData.users[login]) {
+    allData.users[login] = { role: "user", password: "" };
+    allData.points[login] = 0;
+    syncToFirebase();
+  }
+  renderAll();
+}
+function updateUserUI() {
+  const userProfile = document.getElementById('user-profile');
+  const showLoginBtn = document.getElementById('show-login-btn');
+  const signoutBtn = document.getElementById('signout-btn');
+  if (currentUser) {
+    showLoginBtn.style.display = 'none';
+    userProfile.style.display = '';
+    document.getElementById('user-name').textContent = currentUser;
+    signoutBtn.style.display = '';
+  } else {
+    showLoginBtn.style.display = '';
+    userProfile.style.display = 'none';
+    signoutBtn.style.display = 'none';
+  }
+}
+function userRole() {
+  return (allData.users[currentUser] && allData.users[currentUser].role) || "user";
+}
 
-    // ==== Инициализация ====
+// === Modal Windows ===
+window.showLogin = function showLogin() {
+  closeAllModals();
+  document.getElementById('login-modal-bg').style.display = 'flex';
+  document.getElementById('login-username').focus();
+  document.getElementById('login-err').textContent = '';
+}
+window.closeLoginModal = function closeLoginModal() { document.getElementById('login-modal-bg').style.display = 'none'; }
+window.showRegister = function showRegister() {
+  closeAllModals();
+  document.getElementById('register-modal-bg').style.display = 'flex';
+  document.getElementById('register-username').focus();
+  document.getElementById('register-err').textContent = '';
+}
+window.closeRegisterModal = function closeRegisterModal() { document.getElementById('register-modal-bg').style.display = 'none'; }
+window.showQuestModal = function showQuestModal() {
+  if (userRole() !== 'admin') return;
+  closeAllModals();
+  document.getElementById('quest-modal-bg').style.display = 'flex';
+  setTimeout(() => { document.getElementById('taskName').focus(); }, 90);
+}
+window.closeQuestModal = function closeQuestModal() { document.getElementById('quest-modal-bg').style.display = 'none'; }
+window.showRewardModal = function showRewardModal() {
+  if (userRole() !== 'admin') return;
+  closeAllModals();
+  document.getElementById('reward-modal-bg').style.display = 'flex';
+  setTimeout(() => { document.getElementById('rewardName').focus(); }, 90);
+}
+window.closeRewardModal = function closeRewardModal() { document.getElementById('reward-modal-bg').style.display = 'none'; }
+function closeAllModals() {
+  ['login-modal-bg','register-modal-bg','quest-modal-bg','reward-modal-bg'].forEach(id => {
+    let el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+  });
+}
+document.getElementById('show-login-btn').onclick = showLogin;
+window.onclick = function(event) {
+  [
+    {modal: 'login-modal-bg', close: closeLoginModal},
+    {modal: 'register-modal-bg', close: closeRegisterModal},
+    {modal: 'quest-modal-bg', close: closeQuestModal},
+    {modal: 'reward-modal-bg', close: closeRewardModal}
+  ].forEach(({modal, close}) => {
+    const el = document.getElementById(modal);
+    if (event.target === el) close();
+  });
+};
+window.addEventListener('keydown', function(e) {
+  if (e.key === "Escape") closeAllModals();
+});
+
+// === Auth ===
+window.doLogin = function doLogin() {
+  let login = document.getElementById('login-username').value.trim();
+  let pass = document.getElementById('login-password').value.trim();
+  if (!login || !pass) { document.getElementById('login-err').textContent = "Fill both fields"; return; }
+  if (!allData.users[login] || allData.users[login].password !== pass) { document.getElementById('login-err').textContent = "Wrong login or password"; return; }
+  setUser(login);
+  closeAllModals();
+  renderAll();
+}
+window.doRegister = function doRegister() {
+  let login = document.getElementById('register-username').value.trim();
+  let pass = document.getElementById('register-password').value.trim();
+  if (!login || !pass) { document.getElementById('register-err').textContent = "Fill both fields"; return; }
+  if (allData.users[login]) { document.getElementById('register-err').textContent = "User exists"; return; }
+  allData.users[login] = { password: pass, role: 'user' };
+  allData.points[login] = 0;
+  syncToFirebase();
+  setUser(login);
+  closeAllModals();
+  renderAll();
+}
+window.signOut = function signOut() {
+  localStorage.removeItem('pawCurrentUser');
+  currentUser = "";
+  renderAll();
+}
+
+// === Navigation and Page Switch ===
+const pages = document.querySelectorAll('.page');
+const navLinks = document.querySelectorAll('nav.bottom a');
+navLinks.forEach(link => {
+  link.addEventListener('click', () => {
+    const target = link.getAttribute('data-page');
+    currentPage = target;
     renderAll();
+  });
+});
 
-    // ==== Клавиши esc для закрытия модалок ====
-    window.addEventListener('keydown', e => {
-      if (e.key === "Escape") {
-        closeLoginModal();
-        document.getElementById("confirm-modal-bg").style.display = "none";
-      }
+// === Filters/Search ===
+let questFilterType = "", questFilterText = "";
+let rewardFilterText = "";
+function renderQuestFilters() {
+  const bar = document.createElement('div');
+  bar.className = "filter-bar";
+  bar.innerHTML = `
+    <label>Type:
+      <select onchange="window.setQuestFilterType(this.value)">
+        <option value="">All</option>
+        <option value="daily"${questFilterType==='daily'?' selected':''}>Daily</option>
+        <option value="weekly"${questFilterType==='weekly'?' selected':''}>Weekly</option>
+        <option value="event"${questFilterType==='event'?' selected':''}>Event</option>
+      </select>
+    </label>
+    <label>Search:
+      <input type="text" placeholder="Name/desc" value="${questFilterText}" oninput="window.setQuestFilterText(this.value)" />
+    </label>
+  `;
+  return bar;
+}
+window.setQuestFilterType = function(v) { questFilterType = v; renderAll(); }
+window.setQuestFilterText = function(v) { questFilterText = v; renderAll(); }
+function filterQuests() {
+  let arr = allData.quests || [];
+  if (questFilterType) arr = arr.filter(q=>q.type===questFilterType);
+  if (questFilterText) arr = arr.filter(q=>(q.name+q.desc).toLowerCase().includes(questFilterText.toLowerCase()));
+  return arr;
+}
+function renderRewardFilters() {
+  const bar = document.createElement('div');
+  bar.className = "filter-bar";
+  bar.innerHTML = `
+    <label>Search:
+      <input type="text" placeholder="Reward..." value="${rewardFilterText}" oninput="window.setRewardFilterText(this.value)" />
+    </label>
+  `;
+  return bar;
+}
+window.setRewardFilterText = function(v) { rewardFilterText = v; renderAll(); }
+function filterRewards() {
+  let arr = allData.rewards || [];
+  if (rewardFilterText) arr = arr.filter(r=>(r.name+r.desc).toLowerCase().includes(rewardFilterText.toLowerCase()));
+  return arr;
+}
+
+// === Main, Quests, Shop, Claimed, Settings Pages ===
+function renderMain() {
+  let pts = allData.points[currentUser] || 0;
+  document.getElementById('page-main').innerHTML = `
+    <div class="section" style="text-align: center;">
+      <h2 style="font-size: 2rem; color: var(--text-dark);">Welcome${currentUser ? ', ' + currentUser : ''}!</h2>
+      <p style="font-size: 1.2rem; margin-top: 10px;">You have</p>
+      <div style="font-size: 3rem; color: var(--main-color); margin: 10px 0;">
+        🐾 <strong id="points">${pts}</strong>
+      </div>
+      <p style="font-size: 1rem; color: #777">paw points</p>
+    </div>
+    ${
+      userRole() === 'admin' ?
+      `<div class="section" style="text-align: center;display:flex;flex-wrap:wrap;justify-content:center;gap:16px;">
+        <button class="paw-action-btn" type="button" onclick="showQuestModal()">
+          <span style="font-size:1.3em;">📝</span> New Quest
+        </button>
+        <button class="paw-action-btn" type="button" onclick="showRewardModal()">
+          <span style="font-size:1.3em;">🎁</span> New Reward
+        </button>
+      </div>`
+      : ''
+    }
+  `;
+}
+function renderQuests() {
+  const page = document.getElementById('page-tasks');
+  page.innerHTML = `<div class="section" style="text-align: center;"><h2 style="font-size: 2rem; color: var(--text-dark);">Quests</h2></div>`;
+  page.appendChild(renderQuestFilters());
+  const section = document.createElement('div');
+  section.className = 'section';
+  let quests = filterQuests();
+  if (!quests || quests.length === 0) section.innerHTML = '<p>No quests yet.</p>';
+  else {
+    ['daily', 'weekly', 'event'].forEach(type => {
+      const filtered = quests.filter(q => q.type === type);
+      if (filtered.length === 0) return;
+      const h = document.createElement('h3');
+      h.textContent = type === 'daily' ? 'Daily' : type === 'weekly' ? 'Weekly' : 'Events';
+      section.appendChild(h);
+      filtered.forEach((q, i) => {
+        const globalIndex = allData.quests.indexOf(q);
+        const card = document.createElement('div');
+        card.className = 'card ' + type;
+        card.innerHTML = `
+          <div class="flex">
+            <div>
+              <b>${q.emoji ? q.emoji + ' ' : ''}${q.name}</b> <span>(${q.pts} points)</span>
+              <p class="desc">${q.desc || ''}</p>
+            </div>
+            <div>
+              ${userRole()==='user'?`
+                <button onclick="completeTask(${globalIndex})" title="Complete">✔️</button>
+              `:''}
+              ${userRole()==='admin'?`
+                <button onclick="deleteQuest(${globalIndex})" title="Delete">❌</button>
+              `:''}
+            </div>
+          </div>
+        `;
+        section.appendChild(card);
+      });
     });
+  }
+  page.appendChild(section);
+  renderCompleted();
+}
+function renderCompleted() {
+  let page = document.getElementById('page-tasks');
+  let completedSection = document.createElement('div');
+  completedSection.className = 'section';
+  completedSection.innerHTML = `<h2 style="color:var(--text-dark);margin-bottom:10px;">✅ Completed Quests</h2>`;
+  const userCompleted = (allData.completed||[]).filter(q => q.username === currentUser);
+  if (userCompleted.length === 0) {
+    completedSection.innerHTML += '<p>No completed quests yet.</p>';
+  } else {
+    userCompleted.forEach(q => {
+      const card = document.createElement('div');
+      card.className = 'card daily';
+      card.innerHTML = `
+        <b>${q.emoji ? q.emoji + ' ' : ''}${q.name}</b> <span>(${q.pts} points)</span>
+        <p class="desc">${q.desc || ''}</p>
+        <small>Completed: ${new Date(q.completedAt).toLocaleString()}</small>
+      `;
+      completedSection.appendChild(card);
+    });
+  }
+  page.appendChild(completedSection);
+}
+function renderShop() {
+  const pts = allData.points[currentUser] || 0;
+  const page = document.getElementById('page-shop');
+  page.innerHTML = `
+    <div class="section" style="text-align: center;">
+      <h2 style="font-size: 2rem; color: var(--text-dark);">Reward Store</h2>
+      <p style="font-size: 1.1rem; color: #333; margin: 8px 0;">🐾 Balance: <strong id="points">${pts}</strong></p>
+    </div>
+  `;
+  page.appendChild(renderRewardFilters());
+  const section = document.createElement('div');
+  section.className = 'section';
+  let rewards = filterRewards();
+  if (!rewards || rewards.length === 0) {
+    section.innerHTML = '<p>No rewards yet.</p>';
+  } else {
+    rewards.forEach((r, i) => {
+      section.innerHTML += `
+        <div style="border: 2px solid #6fedd1; border-radius: 12px; padding: 12px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <strong>${r.emoji ? r.emoji + ' ' : ''}${r.name}</strong>
+            <div style="color: #666; font-size: 0.9rem;">${r.desc}</div>
+            ${userRole()==='admin'?`
+              <div style="margin-top:8px;">
+                <button onclick="deleteReward(${i})" style="background:#ffb2b2;color:#a00;padding:3px 14px;border-radius:5px;margin-right:10px;">Delete</button>
+                <button onclick="changeRewardAmount(${i})" style="background:#ffe177;color:#65430a;padding:3px 14px;border-radius:5px;">Change cost</button>
+              </div>
+            `:''}
+          </div>
+          ${userRole()==='user'?`
+            <button onclick="claimReward(${i})" style="background: #6fedd1; color: white; border: none; border-radius: 8px; padding: 6px 16px; font-weight: bold;" ${pts < r.cost ? 'disabled style="opacity:0.6;cursor:not-allowed"' : ''}>-${r.cost}</button>
+          `:''}
+        </div>
+      `;
+    });
+  }
+  page.appendChild(section);
+}
+function renderClaimed() {
+  const page = document.getElementById('page-claimed');
+  page.innerHTML = `
+    <div class="section" style="text-align: center;">
+      <h2 style="font-size: 2rem; color: var(--text-dark);">Claimed Rewards</h2>
+      <p style="color: #666; margin: 10px 0;">Your purchased rewards:</p>
+    </div>
+  `;
+  const section = document.createElement('div');
+  section.className = 'section';
+  const claimed = (allData.claimed||[]).filter(r => r.username === currentUser);
+  if (claimed.length === 0) {
+    section.innerHTML = '<p>No claimed rewards.</p>';
+  } else {
+    claimed.forEach((r, i) => {
+      section.innerHTML += `
+        <div style="border: 2px solid #fdd36a; border-radius: 12px; padding: 12px; margin-bottom: 12px;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <strong>${r.emoji ? r.emoji + ' ' : ''}${r.name}</strong>
+              <div style="color: #666; font-size: 0.9rem;">${r.desc}</div>
+            </div>
+            ${
+              r.done
+              ? `<button class="paw-action-btn" style="background:#d0ffd0;color:#0b8f57;display:flex;align-items:center;gap:6px;" disabled>
+                  <svg width="28" height="28" viewBox="0 0 24 24"><use href="#paw"/></svg> Received
+                </button>`
+              : userRole()==='user'
+                ? `<button class="paw-action-btn" disabled>Waiting...</button>`
+                : `<button class="paw-action-btn" onclick="markRewardDone(${i})">Mark as received</button>`
+            }
+          </div>
+          <small>Claimed: ${r.claimedAt?new Date(r.claimedAt).toLocaleString():"-"}</small>
+        </div>
+      `;
+    });
+  }
+  page.appendChild(section);
+}
+function renderSettings() {
+  const role = userRole();
+  document.getElementById('page-settings').innerHTML = `
+    <div class="settings-section">
+      <h3>General</h3>
+      <button onclick="resetAllData()">Reset all data</button>
+      <div style="font-size:0.98em; color:#a4067b; margin-top:7px;">Warning: this clears all quests, rewards and history for this account</div>
+    </div>
+    <div class="settings-section">
+      <h3>Role</h3>
+      <div style="margin-bottom:12px;display:flex;gap:30px;align-items:center;justify-content:center;">
+        <label style="display:flex;align-items:center;gap:7px;">
+          <input type="radio" name="role" value="user" ${role==='user'?'checked':''} onchange="switchRole('user')" />
+          <span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#f6edd1;box-shadow:0 0 2px #aaa;margin-right:5px;"></span>
+          Performer
+        </label>
+        <label style="display:flex;align-items:center;gap:7px;">
+          <input type="radio" name="role" value="admin" ${role==='admin'?'checked':''} onchange="switchRole('admin')" />
+          <span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#f9e28e;box-shadow:0 0 2px #aaa;margin-right:5px;"></span>
+          Questmaster
+        </label>
+      </div>
+      <div style="font-size:0.97em;color:#777;">Performer: mark quests as done, buy rewards<br>Questmaster: create/delete quests and rewards, change reward cost, mark received</div>
+    </div>
+    <div class="settings-section">
+      <h3>About</h3>
+      <div style="color:#065f54;">Talk to my paw — local quest and rewards app 🐾</div>
+    </div>
+    <button class="logout-btn" onclick="signOut()">Sign out</button>
+  `;
+}
+window.switchRole = function switchRole(role) {
+  if (!currentUser) return;
+  if (!allData.users[currentUser]) allData.users[currentUser] = { password: "", role: "user" };
+  allData.users[currentUser].role = role;
+  syncToFirebase();
+  renderAll();
+};
+window.resetAllData = function resetAllData() {
+  if (confirm('Are you sure you want to reset all data?')) {
+    if (!currentUser) return;
+    Object.keys(allData.points).forEach(u=>{if(u===currentUser)allData.points[u]=0;});
+    allData.completed = allData.completed.filter(q=>q.username!==currentUser);
+    allData.claimed = allData.claimed.filter(r=>r.username!==currentUser);
+    syncToFirebase();
+    renderAll();
+  }
+}
+
+// === CRUD ===
+window.addTask = function addTask() {
+  if (userRole() !== 'admin') return;
+  const type = document.getElementById('questType').value;
+  const name = document.getElementById('taskName').value.trim();
+  const emoji = document.getElementById('taskEmoji').value.trim() || '';
+  const desc = document.getElementById('taskDesc').value.trim();
+  const pts = parseInt(document.getElementById('taskPoints').value);
+  if (!name || isNaN(pts)) return alert('Please enter valid quest data.');
+  allData.quests.push({ type, name, emoji, desc, pts });
+  syncToFirebase();
+  renderAll();
+};
+window.addReward = function addReward() {
+  if (userRole() !== 'admin') return;
+  const name = document.getElementById('rewardName').value.trim();
+  const emoji = document.getElementById('rewardEmoji').value.trim() || '';
+  const desc = document.getElementById('rewardDesc').value.trim();
+  const cost = parseInt(document.getElementById('rewardCost').value);
+  if (!name || isNaN(cost)) return alert('Please enter valid reward data.');
+  allData.rewards.push({ name, emoji, desc, cost });
+  syncToFirebase();
+  renderAll();
+};
+window.completeTask = function completeTask(index) {
+  if (userRole() !== 'user') return;
+  const q = allData.quests[index];
+  allData.points[currentUser] = (allData.points[currentUser] || 0) + q.pts;
+  allData.completed.push({ ...q, completedAt: new Date().toISOString(), username: currentUser });
+  allData.quests.splice(index, 1);
+  syncToFirebase();
+  renderAll();
+};
+window.deleteQuest = function deleteQuest(index) {
+  if (userRole() !== 'admin') return;
+  if (confirm('Delete this quest?')) {
+    allData.quests.splice(index, 1);
+    syncToFirebase();
+    renderAll();
+  }
+};
+window.claimReward = function claimReward(index) {
+  if (userRole() !== 'user') return;
+  const r = allData.rewards[index];
+  if ((allData.points[currentUser]||0) < r.cost) return alert('Not enough paw points.');
+  allData.points[currentUser] -= r.cost;
+  allData.claimed.push({ ...r, claimedAt: new Date().toISOString(), done: false, username: currentUser });
+  syncToFirebase();
+  renderAll();
+};
+window.markRewardDone = function markRewardDone(index) {
+  if (userRole() !== 'admin') return;
+  const userClaimed = (allData.claimed||[]).filter(r=>r.username===currentUser);
+  if (!userClaimed[index].done) {
+    userClaimed[index].done = true;
+    syncToFirebase();
+    renderAll();
+  }
+};
+window.deleteReward = function deleteReward(index) {
+  if (userRole() !== 'admin') return;
+  if (confirm('Delete this reward?')) {
+    allData.rewards.splice(index, 1);
+    syncToFirebase();
+    renderAll();
+  }
+};
+window.changeRewardAmount = function changeRewardAmount(index) {
+  if (userRole() !== 'admin') return;
+  const val = prompt('Enter new cost (number of paw points):', allData.rewards[index].cost);
+  if (val !== null && !isNaN(parseInt(val))) {
+    allData.rewards[index].cost = parseInt(val);
+    syncToFirebase();
+    renderAll();
+  }
+};
+
+function renderAll() {
+  updateUserUI();
+  pages.forEach(p => p.classList.remove('active'));
+  navLinks.forEach(l => l.classList.remove('active'));
+  if (!currentUser) {
+    showLogin();
+    return;
+  }
+  renderMain();
+  renderShop();
+  renderQuests();
+  renderClaimed();
+  renderSettings();
+  document.getElementById(`page-${currentPage}`).classList.add('active');
+  navLinks.forEach(l => { if (l.getAttribute('data-page') === currentPage) l.classList.add('active'); });
+  document.getElementById('paw-balance').style.display = (currentPage !== "settings" && (currentUser)) ? "flex" : "none";
+  document.getElementById('paw-balance-val').textContent = (allData.points[currentUser] || 0);
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+  if (currentUser && !allData.users[currentUser]) {
+    setUser(currentUser);
+  } else {
+    renderAll();
+  }
+  document.getElementById('loader').style.display = 'none';
+});
   </script>
 </body>
 </html>
