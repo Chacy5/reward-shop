@@ -1,6 +1,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
 import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
 
+// === Firebase Config ===
 const firebaseConfig = {
   apiKey: "AIzaSyBDHjCE7CYC_jxL7EPjUApVvrd8avHmcNA",
   authDomain: "talk-to-my-paw.firebaseapp.com",
@@ -196,6 +197,52 @@ navLinks.forEach(link => {
   });
 });
 
+// === Filters/Search ===
+let questFilterType = "", questFilterText = "";
+let rewardFilterText = "";
+function renderQuestFilters() {
+  const bar = document.createElement('div');
+  bar.className = "filter-bar";
+  bar.innerHTML = `
+    <label>Type:
+      <select onchange="window.setQuestFilterType(this.value)">
+        <option value="">All</option>
+        <option value="daily"${questFilterType==='daily'?' selected':''}>Daily</option>
+        <option value="weekly"${questFilterType==='weekly'?' selected':''}>Weekly</option>
+        <option value="event"${questFilterType==='event'?' selected':''}>Event</option>
+      </select>
+    </label>
+    <label>Search:
+      <input type="text" placeholder="Name/desc" value="${questFilterText}" oninput="window.setQuestFilterText(this.value)" />
+    </label>
+  `;
+  return bar;
+}
+window.setQuestFilterType = function(v) { questFilterType = v; renderAll(); }
+window.setQuestFilterText = function(v) { questFilterText = v; renderAll(); }
+function filterQuests() {
+  let arr = allData.quests || [];
+  if (questFilterType) arr = arr.filter(q=>q.type===questFilterType);
+  if (questFilterText) arr = arr.filter(q=>(q.name+q.desc).toLowerCase().includes(questFilterText.toLowerCase()));
+  return arr;
+}
+function renderRewardFilters() {
+  const bar = document.createElement('div');
+  bar.className = "filter-bar";
+  bar.innerHTML = `
+    <label>Search:
+      <input type="text" placeholder="Reward..." value="${rewardFilterText}" oninput="window.setRewardFilterText(this.value)" />
+    </label>
+  `;
+  return bar;
+}
+window.setRewardFilterText = function(v) { rewardFilterText = v; renderAll(); }
+function filterRewards() {
+  let arr = allData.rewards || [];
+  if (rewardFilterText) arr = arr.filter(r=>(r.name+r.desc).toLowerCase().includes(rewardFilterText.toLowerCase()));
+  return arr;
+}
+
 // === Main, Quests, Shop, Claimed, Settings Pages ===
 function renderMain() {
   let pts = allData.points[currentUser] || 0;
@@ -212,10 +259,10 @@ function renderMain() {
       userRole() === 'admin' ?
       `<div class="section" style="text-align: center;display:flex;flex-wrap:wrap;justify-content:center;gap:16px;">
         <button class="paw-action-btn" type="button" onclick="showQuestModal()">
-          <img src="image5" width="28" height="28" style="vertical-align:middle;" alt="Quest"/> New Quest
+          <img src="image6" width="28" height="28" style="vertical-align:middle;" alt="Quest"/> New Quest
         </button>
         <button class="paw-action-btn" type="button" onclick="showRewardModal()">
-          <img src="image6" width="28" height="28" style="vertical-align:middle;" alt="Reward"/> New Reward
+          <img src="image2" width="28" height="28" style="vertical-align:middle;" alt="Reward"/> New Reward
         </button>
       </div>`
       : ''
@@ -225,12 +272,14 @@ function renderMain() {
 function renderQuests() {
   const page = document.getElementById('page-tasks');
   page.innerHTML = `<div class="section" style="text-align: center;"><h2 style="font-size: 2rem; color: var(--text-dark);">Quests</h2></div>`;
+  page.appendChild(renderQuestFilters());
   const section = document.createElement('div');
   section.className = 'section';
-  if (!allData.quests || allData.quests.length === 0) section.innerHTML = '<p>No quests yet.</p>';
+  let quests = filterQuests();
+  if (!quests || quests.length === 0) section.innerHTML = '<p>No quests yet.</p>';
   else {
     ['daily', 'weekly', 'event'].forEach(type => {
-      const filtered = allData.quests.filter(q => q.type === type);
+      const filtered = quests.filter(q => q.type === type);
       if (filtered.length === 0) return;
       const h = document.createElement('h3');
       h.textContent = type === 'daily' ? 'Daily' : type === 'weekly' ? 'Weekly' : 'Events';
@@ -293,12 +342,14 @@ function renderShop() {
       <p style="font-size: 1.1rem; color: #333; margin: 8px 0;">🐾 Balance: <strong id="points">${pts}</strong></p>
     </div>
   `;
+  page.appendChild(renderRewardFilters());
   const section = document.createElement('div');
   section.className = 'section';
-  if (!allData.rewards || allData.rewards.length === 0) {
+  let rewards = filterRewards();
+  if (!rewards || rewards.length === 0) {
     section.innerHTML = '<p>No rewards yet.</p>';
   } else {
-    allData.rewards.forEach((r, i) => {
+    rewards.forEach((r, i) => {
       section.innerHTML += `
         <div style="border: 2px solid #6fedd1; border-radius: 12px; padding: 12px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
           <div>
@@ -344,7 +395,9 @@ function renderClaimed() {
             </div>
             ${
               r.done
-              ? `<button class="paw-action-btn" style="background:#d0ffd0;color:#0b8f57;" disabled>Received</button>`
+              ? `<button class="paw-action-btn" style="background:#d0ffd0;color:#0b8f57;display:flex;align-items:center;gap:6px;" disabled>
+                  <svg width="28" height="28" viewBox="0 0 24 24"><use href="#paw"/></svg> Received
+                </button>`
               : userRole()==='user'
                 ? `<button class="paw-action-btn" disabled>Waiting...</button>`
                 : `<button class="paw-action-btn" onclick="markRewardDone(${i})">Mark as received</button>`
@@ -367,13 +420,15 @@ function renderSettings() {
     </div>
     <div class="settings-section">
       <h3>Role</h3>
-      <div style="margin-bottom:12px;">
-        <label>
+      <div style="margin-bottom:12px;display:flex;gap:30px;align-items:center;justify-content:center;">
+        <label style="display:flex;align-items:center;gap:7px;">
           <input type="radio" name="role" value="user" ${role==='user'?'checked':''} onchange="switchRole('user')" />
+          <span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#f6edd1;box-shadow:0 0 2px #aaa;margin-right:5px;"></span>
           Performer
         </label>
-        <label style="margin-left:24px;">
+        <label style="display:flex;align-items:center;gap:7px;">
           <input type="radio" name="role" value="admin" ${role==='admin'?'checked':''} onchange="switchRole('admin')" />
+          <span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#f9e28e;box-shadow:0 0 2px #aaa;margin-right:5px;"></span>
           Questmaster
         </label>
       </div>

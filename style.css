@@ -3,6 +3,9 @@
   --accent-color: #b2fff0;
   --text-dark: #065f54;
   --bg-light: #eafff8;
+  --color-daily: #b2fff0;
+  --color-weekly: #fff4c3;
+  --color-event: #ffe1fa;
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html, body {
@@ -109,9 +112,12 @@ main {
   border-radius: 12px;
   padding: 4vw 3vw;
   margin: 3vw 0;
-  animation: fadeInUp 0.4s ease forwards;
   box-shadow: 0 1px 2px 0 rgba(111,237,209,0.08);
+  animation: fadeInUp 0.4s ease forwards;
 }
+.card.daily { background: var(--color-daily); border-left-color: #6fedd1;}
+.card.weekly { background: var(--color-weekly); border-left-color: #ffe177;}
+.card.event { background: var(--color-event); border-left-color: #ffb3cb;}
 .flex {
   display: flex;
   justify-content: space-between;
@@ -240,6 +246,48 @@ nav.bottom a.active {
   transition: background 0.18s, color 0.18s;
   text-align: center;
 }
+.filter-bar {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 18px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.filter-bar label {
+  font-size: 0.99em;
+  color: #065f54;
+  font-weight: 600;
+  margin-right:4px;
+}
+.filter-bar select,
+.filter-bar input[type="text"] {
+  font-size: 1em;
+  padding: 7px 10px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  min-width: 110px;
+}
+.modal-bg {
+  position: fixed;
+  z-index: 10001;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.16);
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+.modal-bg .modal.card-modal {
+  margin: 0 auto;
+  position: relative;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  transform: none;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
 @media (max-width: 600px) {
   html { font-size: 15px; }
   header { padding: 2vw 1vw; }
@@ -247,6 +295,7 @@ nav.bottom a.active {
   .section { padding: 5vw 2vw; max-width: 98vw; }
   .card { padding: 5vw 2vw; }
   .nav-icon-img { min-width: 22px; min-height: 22px; }
+  .modal-bg .modal.card-modal { min-width: 90vw; max-width: 96vw; }
 }
 .demo-hide { display: none !important; }
 @keyframes fadeInUp {

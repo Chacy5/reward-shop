@@ -11,19 +11,19 @@
   <div class="loader" id="loader" style="display:none">Loading...</div>
   <header>
     <span class="logo-wrap">
-      <img src="image1" alt="Talk to my paw" class="logo-svg" />
+      <img src="image7" alt="Talk to my paw" class="logo-svg" />
     </span>
     <span id="paw-balance" style="display:none;">
       <span class="paw-balance-text">🐾 <span id="paw-balance-val">0</span></span>
     </span>
     <span id="user-info">
       <button id="show-login-btn" title="Sign in" type="button">
-        <img src="image2" alt="User" width="30" height="30" style="vertical-align:middle"/>
+        <img src="image4" alt="User" width="30" height="30" style="vertical-align:middle"/>
       </button>
       <span id="user-profile" style="display:none;">
         <span id="user-name"></span>
         <button id="signout-btn" type="button" onclick="signOut()" style="display:none;">
-          <img src="image3" alt="Sign out" width="28" height="28" style="vertical-align:middle"/>
+          <img src="image5" alt="Sign out" width="28" height="28" style="vertical-align:middle"/>
         </button>
       </span>
     </span>
@@ -34,15 +34,16 @@
     <div id="page-tasks" class="page"></div>
     <div id="page-claimed" class="page"></div>
     <div id="page-settings" class="page"></div>
+    <div style="height:90px;"></div>
   </main>
   <!-- Login Modal -->
   <div id="login-modal-bg" class="modal-bg" style="display:none;">
     <div class="modal card-modal">
       <button class="modal-close" type="button" onclick="closeLoginModal()">
-        <img src="image8" width="28" height="28" alt="Close"/>
+        <svg width="28" height="28" viewBox="0 0 24 24" class="icon-svg"><use href="#solar-close"/></svg>
       </button>
       <div class="modal-header">
-        <img src="image9" width="40" height="40" alt="User"/>
+        <img src="image4" width="40" height="40" alt="User"/>
         <h2>Sign In</h2>
       </div>
       <div class="input-group">
@@ -55,7 +56,7 @@
           <input type="password" id="login-password" autocomplete="current-password" placeholder="Password" />
         </label>
         <button class="paw-action-btn wide-btn" type="button" onclick="doLogin()">
-          <img src="image2" width="28" height="28" alt="User" style="vertical-align:middle;"/> Sign In
+          <img src="image4" width="28" height="28" alt="User" style="vertical-align:middle;"/> Sign In
         </button>
         <div style="text-align:center;margin-top:8px;">
           <span id="login-err" style="color:#c00;font-size:0.97em;"></span>
@@ -72,10 +73,10 @@
   <div id="register-modal-bg" class="modal-bg" style="display:none;">
     <div class="modal card-modal">
       <button class="modal-close" type="button" onclick="closeRegisterModal()">
-        <img src="image4" width="28" height="28" alt="Close"/>
+        <svg width="28" height="28" viewBox="0 0 24 24" class="icon-svg"><use href="#solar-close"/></svg>
       </button>
       <div class="modal-header">
-        <img src="image2" width="40" height="40" alt="User"/>
+        <img src="image4" width="40" height="40" alt="User"/>
         <h2>Register</h2>
       </div>
       <div class="input-group">
@@ -88,7 +89,7 @@
           <input type="password" id="register-password" autocomplete="new-password" placeholder="Choose password" />
         </label>
         <button class="paw-action-btn wide-btn" type="button" onclick="doRegister()">
-          <img src="image2" width="28" height="28" alt="User" style="vertical-align:middle;"/> Register
+          <img src="image4" width="28" height="28" alt="User" style="vertical-align:middle;"/> Register
         </button>
         <div style="text-align:center;margin-top:8px;">
           <span id="register-err" style="color:#c00;font-size:0.97em;"></span>
@@ -105,10 +106,10 @@
   <div id="quest-modal-bg" class="modal-bg" style="display:none;">
     <div class="modal card-modal">
       <button class="modal-close" type="button" onclick="closeQuestModal()">
-        <img src="image4" width="28" height="28" alt="Close"/>
+        <svg width="28" height="28" viewBox="0 0 24 24" class="icon-svg"><use href="#solar-close"/></svg>
       </button>
       <div class="modal-header">
-        <img src="image5" width="40" height="40" alt="Quest"/>
+        <img src="image6" width="40" height="40" alt="Quest"/>
         <h2>Add Quest</h2>
       </div>
       <div class="input-group">
@@ -126,7 +127,16 @@
         </label>
         <label>
           <span>Category</span>
-          <input type="text" id="taskEmoji" placeholder="Emoji or category" maxlength="2" />
+          <select id="taskEmoji">
+            <option value="">No category</option>
+            <option value="🎯">🎯 Goal</option>
+            <option value="📚">📚 Study</option>
+            <option value="🧹">🧹 Cleaning</option>
+            <option value="💪">💪 Sport</option>
+            <option value="🌿">🌿 Nature</option>
+            <option value="📝">📝 Note</option>
+            <option value="🧠">🧠 Growth</option>
+          </select>
         </label>
         <label>
           <span>Description</span>
@@ -137,7 +147,7 @@
           <input type="number" id="taskPoints" placeholder="Reward points" />
         </label>
         <button class="paw-action-btn wide-btn" type="button" onclick="addTask(); closeQuestModal();">
-          <img src="image5" width="28" height="28" style="vertical-align:middle;" alt="Quest"/> Add Quest
+          <img src="image6" width="28" height="28" style="vertical-align:middle;" alt="Quest"/> Add Quest
         </button>
       </div>
     </div>
@@ -146,10 +156,10 @@
   <div id="reward-modal-bg" class="modal-bg" style="display:none;">
     <div class="modal card-modal">
       <button class="modal-close" type="button" onclick="closeRewardModal()">
-        <img src="image4" width="28" height="28" alt="Close"/>
+        <svg width="28" height="28" viewBox="0 0 24 24" class="icon-svg"><use href="#solar-close"/></svg>
       </button>
       <div class="modal-header">
-        <img src="image6" width="40" height="40" alt="Reward"/>
+        <img src="image2" width="40" height="40" alt="Reward"/>
         <h2>Add Reward</h2>
       </div>
       <div class="input-group">
@@ -159,7 +169,15 @@
         </label>
         <label>
           <span>Category</span>
-          <input type="text" id="rewardEmoji" placeholder="Emoji or category" maxlength="2" />
+          <select id="rewardEmoji">
+            <option value="">No category</option>
+            <option value="🎁">🎁 Gift</option>
+            <option value="🍫">🍫 Sweets</option>
+            <option value="☕">☕ Coffee</option>
+            <option value="🛋️">🛋️ Rest</option>
+            <option value="🎮">🎮 Games</option>
+            <option value="🧸">🧸 Cute</option>
+          </select>
         </label>
         <label>
           <span>Description</span>
@@ -170,30 +188,34 @@
           <input type="number" id="rewardCost" placeholder="Cost in paw points" />
         </label>
         <button class="paw-action-btn wide-btn" type="button" onclick="addReward(); closeRewardModal();">
-          <img src="image6" width="28" height="28" style="vertical-align:middle;" alt="Reward"/> Add Reward
+          <img src="image2" width="28" height="28" style="vertical-align:middle;" alt="Reward"/> Add Reward
         </button>
       </div>
     </div>
   </div>
+  <svg style="display:none;">
+    <symbol id="solar-close" viewBox="0 0 24 24"><path d="M6 6l12 12M6 18L18 6" stroke="#065f54" stroke-width="1.5" fill="none"/></symbol>
+    <symbol id="paw" viewBox="0 0 24 24"><ellipse cx="12" cy="18" rx="4" ry="3.5" fill="#6fedd1"/><ellipse cx="5.5" cy="12" rx="2.5" ry="3" fill="#6fedd1"/><ellipse cx="18.5" cy="12" rx="2.5" ry="3" fill="#6fedd1"/><ellipse cx="8" cy="7.5" rx="2" ry="2.5" fill="#6fedd1"/><ellipse cx="16" cy="7.5" rx="2" ry="2.5" fill="#6fedd1"/></symbol>
+  </svg>
   <nav class="bottom">
     <a data-page="main" class="active" title="Home">
-      <img class="nav-icon-img" src="image3" alt="Home" />
+      <img class="nav-icon-img" src="image1" alt="Home" />
       <span class="nav-label">Home</span>
     </a>
     <a data-page="shop" title="Shop">
-      <img class="nav-icon-img" src="image4" alt="Shop" />
+      <img class="nav-icon-img" src="image2" alt="Shop" />
       <span class="nav-label">Shop</span>
     </a>
     <a data-page="tasks" title="Quests">
-      <img class="nav-icon-img" src="image5" alt="Quests" />
+      <img class="nav-icon-img" src="image3" alt="Quests" />
       <span class="nav-label">Quests</span>
     </a>
     <a data-page="claimed" title="Rewards">
-      <img class="nav-icon-img" src="image6" alt="Rewards" />
+      <img class="nav-icon-img" src="image5" alt="Rewards" />
       <span class="nav-label">Rewards</span>
     </a>
     <a data-page="settings" title="Settings">
-      <img class="nav-icon-img" src="image7" alt="Settings" />
+      <img class="nav-icon-img" src="image6" alt="Settings" />
       <span class="nav-label">Settings</span>
     </a>
   </nav>
