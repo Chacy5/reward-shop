@@ -16,14 +16,11 @@ let DEFAULT_EMOJI = [
 ];
 
 // ====== DEMO MODE ======
-// Проверка: демо ли сейчас
 function isDemo() { return !currentUser || currentUser === DEMO_USER; }
-
-// Демо-данные (обновлены)
 function getDemoData() {
   return {
     profile: { username: DEMO_USER, password: "demo", role: "Performer" },
-    points: 100, // 100 лапок на балансе
+    points: 100,
     quests: [
       { id: 1, type: 'daily', name: '🟢 Завершите этот квест', emoji: '🐾', category: "Goal", desc: 'Кликните "Mark done", чтобы выполнить ежедневную задачу', pts: 6, done: false, lastDone: null },
       { id: 2, type: 'event', name: '🔵 Получите награду', emoji: '🎁', category: "Gift", desc: 'Зайдите в Reward Store, чтобы получить награду за баллы', pts: 5, done: false, lastDone: null },
@@ -59,13 +56,11 @@ function logout() { currentUser = ""; localStorage.removeItem('pawCurrentUser');
 function resetDailiesAndWeeklies() {
   let user = getUserData();
   let now = Date.now();
-  // Daily
   let todayStart = new Date(); todayStart.setHours(0,0,0,0);
   if (!user.lastDailyReset || user.lastDailyReset < todayStart.getTime()) {
     user.quests.forEach(q => { if(q.type==='daily') q.done = false; });
     user.lastDailyReset = todayStart.getTime();
   }
-  // Weekly (Monday 00:00)
   let monday = new Date(); let day = monday.getDay()||7;
   monday.setHours(0,0,0,0); monday.setDate(monday.getDate() - day + 1);
   if (!user.lastWeeklyReset || user.lastWeeklyReset < monday.getTime()) {
@@ -81,7 +76,7 @@ function showLoginModal() {
     <h3>Sign In</h3>
     <label>Username <input id="login-username" type="text" autocomplete="username"></label>
     <label>Password <input id="login-password" type="password" autocomplete="current-password"></label>
-    <button onclick="doLogin()">Sign In</button>
+    <button class="fancy-btn" onclick="doLogin()">Sign In</button>
     <div style="margin-top:8px;font-size:0.97em;">
       <span>Don't have an account? <a href="#" onclick="showRegisterModal()">Register</a></span>
     </div>
@@ -106,7 +101,7 @@ function showRegisterModal() {
     <h3>Register</h3>
     <label>Username <input id="register-username" type="text" autocomplete="username"></label>
     <label>Password <input id="register-password" type="password" autocomplete="new-password"></label>
-    <button onclick="doRegister()">Register</button>
+    <button class="fancy-btn" onclick="doRegister()">Register</button>
     <div style="margin-top:8px;font-size:0.97em;">
       <span>Already have an account? <a href="#" onclick="showLoginModal()">Sign In</a></span>
     </div>
@@ -144,6 +139,28 @@ function categoryDropdown(selected) {
   let cats = getUserData().categories || [];
   return `<select id="cat-select">${cats.map(c=>`<option${selected===c.name?' selected':''}>${c.emoji} ${c.name}</option>`).join("")}
     <option value="add-cat">➕ Add category</option></select>`;
+}
+
+// ====== Filtering ======
+function renderFilterBar(type) {
+  const user = getUserData();
+  const categories = user.categories.map(c => c.name);
+  let html = `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
+    <button class="filter-btn" data-filter="all">Все</button>`;
+  categories.forEach(cat => {
+    html += `<button class="filter-btn" data-filter="${cat}">${cat}</button>`;
+  });
+  html += `</div>`;
+  return html;
+}
+
+function filterHandler(type, renderFunc) {
+  return function(e) {
+    if (e.target.classList.contains('filter-btn')) {
+      const cat = e.target.getAttribute('data-filter');
+      renderFunc(cat === "all" ? null : cat);
+    }
+  };
 }
 
 // ====== HOME ======
@@ -207,17 +224,18 @@ function renderHome() {
 }
 
 // ====== QUESTS ======
-function renderQuests() {
+function renderQuests(activeCategory = null) {
   resetDailiesAndWeeklies();
   const user = getUserData();
   const isQM = user.profile.role === 'Questmaster';
-  let html = "";
+  let html = renderFilterBar('quests');
   if (isDemo()) {
     html += `<div class="demo-hint">Демо-квесты показывают, как устроено приложение.<br>Попробуйте выполнить их!</div>`;
   } else if (isQM) {
     html += `<button class="paw-action-btn" onclick="openQuestModal()">+ Add quest</button>`;
   }
   let list = user.quests.filter(q=>!q.done || q.type==="event");
+  if (activeCategory) list = list.filter(q => q.category === activeCategory);
   if (list.length === 0) html += `<div>No active quests.</div>`;
   list.forEach((q, i) => {
     if(q.type!=="event" && q.done) return;
@@ -239,13 +257,14 @@ function renderQuests() {
     html += `</div></div>`;
   });
   document.getElementById('page-quests').innerHTML = `<h2>Quests</h2>${html}`;
+  document.getElementById('page-quests').onclick = filterHandler('quests', renderQuests);
 }
 
-// ...аналогично для renderShop
-function renderShop() {
+// ====== SHOP ======
+function renderShop(activeCategory = null) {
   const user = getUserData();
   const isQM = user.profile.role === 'Questmaster';
-  let html = "";
+  let html = renderFilterBar('rewards');
   if (isDemo()) {
     html += `<div class="demo-hint">В игре награды — это приятные или полезные бонусы, которые можно "покупать" за лапки.<br>
       Вот несколько идей, почему такая игра может помочь:</div>`;
@@ -253,6 +272,7 @@ function renderShop() {
     html += `<button class="paw-action-btn" onclick="openRewardModal()">+ Add reward</button>`;
   }
   let list = user.rewards || [];
+  if (activeCategory) list = list.filter(r => r.category === activeCategory);
   if (list.length === 0) html += `<div>No rewards yet.</div>`;
   list.forEach((r, i) => {
     html += `
@@ -275,22 +295,7 @@ function renderShop() {
     html += `</div></div>`;
   });
   document.getElementById('page-shop').innerHTML = `<h2>Reward Store</h2>${html}`;
-}
-
-// ====== Роли ======
-function renderUserMenuRoleSwitch() {
-  if (isDemo()) return '';
-  let role = getUserData().profile.role;
-  let other = role === "Questmaster" ? "Performer" : "Questmaster";
-  return `<div class="user-menu-item" id="switch-role">${role} (Switch to ${other})</div>`;
-}
-function setupRoleSwitch() {
-  let node = document.getElementById('switch-role');
-  if(node) node.onclick = function() {
-    let user = getUserData();
-    user.profile.role = user.profile.role === "Questmaster" ? "Performer" : "Questmaster";
-    saveData(); renderAll(); closeUserMenu();
-  };
+  document.getElementById('page-shop').onclick = filterHandler('rewards', renderShop);
 }
 
 // ====== CLAIMED REWARDS =======
@@ -322,7 +327,7 @@ function renderClaimedRewards() {
       </div>`;
     } else {
       if (isQM) {
-        html += `<button onclick="markRewardReceived(${c.id})">Mark as received</button>`;
+        html += `<button class="fancy-btn" onclick="markRewardReceived(${c.id})">Mark as received</button>`;
       } else {
         html += `<span style="color:#888;font-size:1.05em;">Waiting for confirmation...</span>`;
       }
@@ -332,71 +337,28 @@ function renderClaimedRewards() {
   document.getElementById('page-rewards').innerHTML = html;
 }
 
-function markRewardReceived(id) {
-  const user = getUserData();
-  let reward = user.claimed.find(r => r.id === id);
-  if (reward) {
-    reward.received = true;
-    saveData();
-    renderClaimedRewards();
-  }
-}
-window.markRewardReceived = markRewardReceived;
-
-// ====== SETTINGS ======
+// ====== SETTINGS =======
 function renderSettings() {
   let html = "";
   if (isDemo()) {
     html += `<div class="demo-hint">Настройки доступны только после регистрации.</div>
       <div>
-        <button class="demo-disabled" disabled>Switch theme</button>
-        <button class="demo-disabled" disabled>Open archive</button>
-        <button class="demo-disabled" disabled>Edit categories</button>
-        <button class="demo-disabled" disabled>Reset all data</button>
+        <button class="fancy-btn demo-disabled" disabled>Switch theme</button>
+        <button class="fancy-btn demo-disabled" disabled>Open archive</button>
+        <button class="fancy-btn demo-disabled" disabled>Edit categories</button>
+        <button class="fancy-btn demo-disabled" disabled>Reset all data</button>
       </div>`;
   } else {
     html += `
       <div>
-        <button id="theme-switcher">Switch theme</button>
-        <button id="archive-open">Open archive</button>
-        <button id="edit-categories">Edit categories</button>
-        <button id="reset-all-data">Reset all data</button>
+        <button class="fancy-btn" id="theme-switcher">Switch theme</button>
+        <button class="fancy-btn" id="archive-open">Open archive</button>
+        <button class="fancy-btn" id="edit-categories">Edit categories</button>
+        <button class="fancy-btn" id="reset-all-data">Reset all data</button>
       </div>
     `;
   }
   document.getElementById('page-settings').innerHTML = `<h2>Settings</h2>${html}`;
-}
-
-// ====== Роли ======
-function renderUserMenuRoleSwitch() {
-  if (isDemo()) return '';
-  let role = getUserData().profile.role;
-  let other = role === "Questmaster" ? "Performer" : "Questmaster";
-  return `<div class="user-menu-item" id="switch-role">${role} (Switch to ${other})</div>`;
-}
-function setupRoleSwitch() {
-  let node = document.getElementById('switch-role');
-  if(node) node.onclick = function() {
-    let user = getUserData();
-    user.profile.role = user.profile.role === "Questmaster" ? "Performer" : "Questmaster";
-    saveData(); renderAll(); closeUserMenu();
-  };
-}
-
-// ====== Статистика ======
-function renderStatsPage() {
-  let user = getUserData();
-  // By category
-  let catStats = {};
-  user.completed.forEach(c => { catStats[c.category]=catStats[c.category]||0; catStats[c.category]++; });
-  user.claimed.forEach(c => { catStats[c.category]=catStats[c.category]||0; });
-  let html = `<h2>Statistics</h2>
-    <div><b>Completed quests by category:</b><ul>${
-      Object.entries(catStats).map(([cat,qty])=>`<li>${cat}: ${qty}</li>`).join('')
-    }</ul></div>
-    <div><b>Total rewards claimed:</b> ${user.claimed.length}</div>
-    <button onclick="showPage('home')">Back</button>`;
-  document.getElementById('page-statistics').innerHTML = html;
 }
 
 // ====== CRUD Quests ======
@@ -411,14 +373,13 @@ function openQuestModal(id) {
     <label>Emoji ${emojiDropdown(quest.emoji)}</label>
     <label>Description <input id="quest-desc" value="${quest.desc||""}"></label>
     <label>Points <input id="quest-pts" type="number" min="1" value="${quest.pts||1}"></label>
-    <button onclick="${isEdit ? `saveQuest(${quest.id})` : 'saveQuest()'}">Save</button>
-    <button onclick="closeModal()">Cancel</button>
+    <button class="fancy-btn" onclick="${isEdit ? `saveQuest(${quest.id})` : 'saveQuest()'}">Save</button>
+    <button class="fancy-btn" onclick="closeModal()">Cancel</button>
     <div id="emoji-picker-anchor"></div>`;
   openModal(html);
   setupQuestModalDropdowns();
 }
 function setupQuestModalDropdowns() {
-  // Category dropdown
   document.getElementById('cat-select').addEventListener('change', function() {
     if(this.value==="add-cat") {
       let emoji = prompt("Enter emoji for new category:");
@@ -430,7 +391,6 @@ function setupQuestModalDropdowns() {
       }
     }
   });
-  // Emoji dropdown
   document.getElementById('emoji-select').addEventListener('change', function() {
     if(this.value==="add-custom") {
       let emoji = prompt("Enter custom emoji:");
@@ -475,7 +435,7 @@ function completeQuest(id) {
   q.done = true; q.lastDone = Date.now();
   user.points += q.pts;
   user.completed.push({...q, completedAt: Date.now() });
-  if(q.type==="event") user.quests = user.quests.filter(qq=>qq.id!==id); // event удаляется
+  if(q.type==="event") user.quests = user.quests.filter(qq=>qq.id!==id);
   saveData(); renderQuests(); updateUIUser(); renderStatsPage();
 }
 
@@ -492,8 +452,8 @@ function openRewardModal(id) {
     <label>Cost <input id="reward-cost" type="number" min="1" value="${r.cost||1}"></label>
     <label>Bonus <input id="reward-bonus" value="${r.bonus||""}"></label>
     <label>Quantity <input id="reward-quantity" type="number" min="0" value="${r.quantity??1}"></label>
-    <button onclick="${isEdit ? `saveReward(${r.id})` : 'saveReward()'}">Save</button>
-    <button onclick="closeModal()">Cancel</button>`;
+    <button class="fancy-btn" onclick="${isEdit ? `saveReward(${r.id})` : 'saveReward()'}">Save</button>
+    <button class="fancy-btn" onclick="closeModal()">Cancel</button>`;
   openModal(html);
   setupRewardModalDropdowns();
 }
@@ -558,6 +518,41 @@ function claimReward(id) {
   saveData(); renderShop(); updateUIUser(); renderStatsPage();
 }
 
+// ====== CLAIMED REWARD BUTTON ======
+function markRewardReceived(id) {
+  const user = getUserData();
+  let reward = user.claimed.find(r => r.id === id);
+  if (reward) {
+    reward.received = true;
+    saveData();
+    renderClaimedRewards();
+  }
+}
+window.markRewardReceived = markRewardReceived;
+
+// ====== Роли ======
+function renderUserMenuRoleSwitch() {
+  if (isDemo()) return '';
+  let role = getUserData().profile.role;
+  let other = role === "Questmaster" ? "Performer" : "Questmaster";
+  return `<button class="user-menu-item" id="switch-role" type="button">${role} (Switch to ${other})</button>`;
+}
+
+// ====== Статистика ======
+function renderStatsPage() {
+  let user = getUserData();
+  let catStats = {};
+  user.completed.forEach(c => { catStats[c.category]=catStats[c.category]||0; catStats[c.category]++; });
+  user.claimed.forEach(c => { catStats[c.category]=catStats[c.category]||0; });
+  let html = `<h2>Statistics</h2>
+    <div><b>Completed quests by category:</b><ul>${
+      Object.entries(catStats).map(([cat,qty])=>`<li>${cat}: ${qty}</li>`).join('')
+    }</ul></div>
+    <div><b>Total rewards claimed:</b> ${user.claimed.length}</div>
+    <button class="fancy-btn" onclick="showPage('home')">Back</button>`;
+  document.getElementById('page-statistics').innerHTML = html;
+}
+
 // ====== UI & NAV ======
 function updateUIUser() {
   document.getElementById('paw-balance-val').textContent = getUserData().points ?? 0;
@@ -579,33 +574,43 @@ function renderAll() {
 
   let menu = document.getElementById('user-menu');
   menu.innerHTML = `
-    <div class="user-menu-item" id="user-menu-edit-profile">Edit profile</div>
-    <div class="user-menu-item" id="user-menu-change-password">Change password</div>
-    <div class="user-menu-item" id="user-menu-statistics">Statistics</div>
+    <button class="user-menu-item" id="user-menu-edit-profile" type="button">Edit profile</button>
+    <button class="user-menu-item" id="user-menu-change-password" type="button">Change password</button>
+    <button class="user-menu-item" id="user-menu-statistics" type="button">Statistics</button>
     ${renderUserMenuRoleSwitch()}
-    <div class="user-menu-item" id="user-menu-logout">Logout</div>
+    <button class="user-menu-item" id="user-menu-logout" type="button">Logout</button>
   `;
-  setupRoleSwitch();
-  document.getElementById('user-menu-edit-profile').onclick = function() {
+  document.getElementById('user-menu-edit-profile').onclick = function(e) {
+    e.stopPropagation();
     openModal(`<h3>Edit Profile</h3>
       <label>Username <input type="text" value="${getUserData().profile.username}" disabled></label>
-      <button onclick="closeModal()">Close</button>
+      <button class="fancy-btn" onclick="closeModal()">Close</button>
     `); closeUserMenu();
   };
-  document.getElementById('user-menu-change-password').onclick = function() {
+  document.getElementById('user-menu-change-password').onclick = function(e) {
+    e.stopPropagation();
     openModal(`<h3>Change Password</h3>
       <label>New Password <input type="password"></label>
-      <button onclick="alert('Change not implemented')">Change</button>
+      <button class="fancy-btn" onclick="alert('Change not implemented')">Change</button>
     `); closeUserMenu();
   };
-  document.getElementById('user-menu-statistics').onclick = function() {
+  document.getElementById('user-menu-statistics').onclick = function(e) {
+    e.stopPropagation();
     showPage('statistics'); closeUserMenu();
   };
-  document.getElementById('user-menu-logout').onclick = function() {
+  let switchRoleBtn = document.getElementById('switch-role');
+  if (switchRoleBtn) switchRoleBtn.onclick = function(e) {
+    e.stopPropagation();
+    let user = getUserData();
+    user.profile.role = user.profile.role === "Questmaster" ? "Performer" : "Questmaster";
+    saveData(); renderAll(); closeUserMenu();
+  };
+  document.getElementById('user-menu-logout').onclick = function(e) {
+    e.stopPropagation();
     openModal(`<h3>Logout</h3>
       <p>Are you sure you want to logout?</p>
-      <button onclick="window.logout()">Yes, logout</button>
-      <button onclick="closeModal()">Cancel</button>
+      <button class="fancy-btn" onclick="window.logout()">Yes, logout</button>
+      <button class="fancy-btn" onclick="closeModal()">Cancel</button>
     `); closeUserMenu();
   };
 }
@@ -665,216 +670,7 @@ document.addEventListener('keydown', e => {
     closeModal(); closeUserMenu(); closeEmojiPicker();
   }
 });
-// ... (ваш существующий код выше не изменен)
 
-// ====== Фильтрация (универсальный фильтр для квестов и наград) ======
-function renderFilterBar(type) {
-  // type: 'quests' | 'rewards'
-  const user = getUserData();
-  const categories = user.categories.map(c => c.name);
-  let html = `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
-    <button class="filter-btn" data-filter="all">Все</button>`;
-  categories.forEach(cat => {
-    html += `<button class="filter-btn" data-filter="${cat}">${cat}</button>`;
-  });
-  html += `</div>`;
-  return html;
-}
-
-function filterHandler(type, renderFunc) {
-  return function(e) {
-    if (e.target.classList.contains('filter-btn')) {
-      const cat = e.target.getAttribute('data-filter');
-      renderFunc(cat === "all" ? null : cat);
-    }
-  };
-}
-
-// ======= QUESTS с фильтрацией =======
-function renderQuests(activeCategory = null) {
-  resetDailiesAndWeeklies();
-  const user = getUserData();
-  const isQM = user.profile.role === 'Questmaster';
-  let html = renderFilterBar('quests');
-  if (isDemo()) {
-    html += `<div class="demo-hint">Демо-квесты показывают, как устроено приложение.<br>Попробуйте выполнить их!</div>`;
-  } else if (isQM) {
-    html += `<button class="paw-action-btn" onclick="openQuestModal()">+ Add quest</button>`;
-  }
-  let list = user.quests.filter(q=>!q.done || q.type==="event");
-  if (activeCategory) list = list.filter(q => q.category === activeCategory);
-  if (list.length === 0) html += `<div>No active quests.</div>`;
-  list.forEach((q, i) => {
-    if(q.type!=="event" && q.done) return;
-    html += `
-    <div class="card ${q.type}">
-      <div style="display:flex;justify-content:space-between;align-items:center;">
-        <div><span style="font-size:1.5em;">${q.emoji}</span> <b>${q.name}</b></div>
-        <div><span style="font-size:1em;">${q.pts} 🐾</span></div>
-      </div>
-      <div style="margin:4px 0 0 0; font-size:0.97em; color:#35776e;">${q.desc}</div>
-      <div style="font-size:0.92em; color:#888;">${q.type}, ${q.category}</div>
-      <div style="margin-top:10px;">`;
-    if (!isDemo() && isQM) {
-      html += `<button class="edit-btn" onclick="editQuest(${q.id})">✏️ Edit</button>
-               <button class="delete-btn" onclick="deleteQuest(${q.id})">🗑️ Delete</button>`;
-    } else if (!q.done) {
-      html += `<button class="paw-action-btn" onclick="completeQuest(${q.id})">Mark done</button>`;
-    }
-    html += `</div></div>`;
-  });
-  document.getElementById('page-quests').innerHTML = `<h2>Quests</h2>${html}`;
-  document.getElementById('page-quests').onclick = filterHandler('quests', renderQuests);
-}
-
-// ======= SHOP с фильтрацией =======
-function renderShop(activeCategory = null) {
-  const user = getUserData();
-  const isQM = user.profile.role === 'Questmaster';
-  let html = renderFilterBar('rewards');
-  if (isDemo()) {
-    html += `<div class="demo-hint">В игре награды — это приятные или полезные бонусы, которые можно "покупать" за лапки.<br>
-      Вот несколько идей, почему такая игра может помочь:</div>`;
-  } else if (isQM) {
-    html += `<button class="paw-action-btn" onclick="openRewardModal()">+ Add reward</button>`;
-  }
-  let list = user.rewards || [];
-  if (activeCategory) list = list.filter(r => r.category === activeCategory);
-  if (list.length === 0) html += `<div>No rewards yet.</div>`;
-  list.forEach((r, i) => {
-    html += `
-    <div class="card">
-      <div style="display:flex;justify-content:space-between;align-items:center;">
-        <div><span style="font-size:1.5em;">${r.emoji}</span> <b>${r.name}</b></div>
-        <div><span style="font-size:1em;">${r.cost} 🐾</span></div>
-      </div>
-      <div style="margin:4px 0 0 0; font-size:1.1em; color:#35776e;">${r.desc}</div>
-      <div style="font-size:0.92em; color:#888;">${r.category}</div>
-      <div style="font-size:0.9em; color:#665;">${r.bonus ? 'Bonus: '+r.bonus : ''}</div>
-      <div style="font-size:0.92em;color:#3c7779;">Left: ${r.quantity??'∞'}</div>
-      <div style="margin-top:10px;">`;
-    if (!isDemo() && isQM) {
-      html += `<button class="edit-btn" onclick="editReward(${r.id})">✏️ Edit</button>
-               <button class="delete-btn" onclick="deleteReward(${r.id})">🗑️ Delete</button>`;
-    } else if (!isDemo() && (r.quantity??1)>0) {
-      html += `<button class="paw-action-btn" onclick="claimReward(${r.id})">Claim</button>`;
-    }
-    html += `</div></div>`;
-  });
-  document.getElementById('page-shop').innerHTML = `<h2>Reward Store</h2>${html}`;
-  document.getElementById('page-shop').onclick = filterHandler('rewards', renderShop);
-}
-
-// ======= CLAIMED REWARDS (Кнопка Mark as received) =======
-function renderClaimedRewards() {
-  const user = getUserData();
-  const isQM = user.profile.role === 'Questmaster';
-  let claimed = user.claimed || [];
-  let html = `<h2>Claimed Rewards</h2>`;
-  if (claimed.length === 0) html += "<div>No claimed rewards.</div>";
-  claimed.forEach((c, i) => {
-    html += `<div class="card" style="position:relative;overflow:hidden;">
-      <div><span style="font-size:1.5em">${c.emoji}</span> <b>${c.name}</b> (${c.category})</div>
-      <div>${c.desc}</div>
-      <div>Cost: ${c.cost} 🐾</div>
-      <div>${c.bonus ? 'Bonus: ' + c.bonus : ''}</div>
-      <div style="margin-top:6px;">`;
-    if (c.received) {
-      html += `<div style="margin:10px 0 0 0;display:flex;align-items:center;gap:8px;">
-        <span style="
-          display:inline-block;
-          width:40px;height:40px;
-          border-radius:50%;background:#eafff8;border:2.5px solid #74ccb3;
-          transform: rotate(30deg);
-          position:relative;
-          box-shadow:0 2px 8px #6fedd140;">
-          <span style="font-size:2em;position:absolute;top:2px;left:5px;">🐾</span>
-        </span>
-        <span style="font-size:1.1em;font-weight:bold;color:#388064;">Reward received</span>
-      </div>`;
-    } else {
-      if (isQM) {
-        html += `<button class="fancy-btn" onclick="markRewardReceived(${c.id})">Mark as received</button>`;
-      } else {
-        html += `<span style="color:#888;font-size:1.05em;">Waiting for confirmation...</span>`;
-      }
-    }
-    html += `</div></div>`;
-  });
-  document.getElementById('page-rewards').innerHTML = html;
-}
-
-// ======= SETTINGS (Все кнопки красивые) =======
-function renderSettings() {
-  let html = "";
-  if (isDemo()) {
-    html += `<div class="demo-hint">Настройки доступны только после регистрации.</div>
-      <div>
-        <button class="fancy-btn demo-disabled" disabled>Switch theme</button>
-        <button class="fancy-btn demo-disabled" disabled>Open archive</button>
-        <button class="fancy-btn demo-disabled" disabled>Edit categories</button>
-        <button class="fancy-btn demo-disabled" disabled>Reset all data</button>
-      </div>`;
-  } else {
-    html += `
-      <div>
-        <button class="fancy-btn" id="theme-switcher">Switch theme</button>
-        <button class="fancy-btn" id="archive-open">Open archive</button>
-        <button class="fancy-btn" id="edit-categories">Edit categories</button>
-        <button class="fancy-btn" id="reset-all-data">Reset all data</button>
-      </div>
-    `;
-  }
-  document.getElementById('page-settings').innerHTML = `<h2>Settings</h2>${html}`;
-}
-
-// ======= USER MENU (фикс обработки кликов) =======
-function renderAll() {
-  // ... (весь код без изменений)
-  let menu = document.getElementById('user-menu');
-  menu.innerHTML = `
-    <button class="user-menu-item" id="user-menu-edit-profile" type="button">Edit profile</button>
-    <button class="user-menu-item" id="user-menu-change-password" type="button">Change password</button>
-    <button class="user-menu-item" id="user-menu-statistics" type="button">Statistics</button>
-    ${renderUserMenuRoleSwitch()}
-    <button class="user-menu-item" id="user-menu-logout" type="button">Logout</button>
-  `;
-  setupRoleSwitch();
-  document.getElementById('user-menu-edit-profile').onclick = function(e) {
-    e.stopPropagation();
-    openModal(`<h3>Edit Profile</h3>
-      <label>Username <input type="text" value="${getUserData().profile.username}" disabled></label>
-      <button class="fancy-btn" onclick="closeModal()">Close</button>
-    `); closeUserMenu();
-  };
-  document.getElementById('user-menu-change-password').onclick = function(e) {
-    e.stopPropagation();
-    openModal(`<h3>Change Password</h3>
-      <label>New Password <input type="password"></label>
-      <button class="fancy-btn" onclick="alert('Change not implemented')">Change</button>
-    `); closeUserMenu();
-  };
-  document.getElementById('user-menu-statistics').onclick = function(e) {
-    e.stopPropagation();
-    showPage('statistics'); closeUserMenu();
-  };
-  let switchRoleBtn = document.getElementById('switch-role');
-  if (switchRoleBtn) switchRoleBtn.onclick = function(e) {
-    e.stopPropagation();
-    let user = getUserData();
-    user.profile.role = user.profile.role === "Questmaster" ? "Performer" : "Questmaster";
-    saveData(); renderAll(); closeUserMenu();
-  };
-  document.getElementById('user-menu-logout').onclick = function(e) {
-    e.stopPropagation();
-    openModal(`<h3>Logout</h3>
-      <p>Are you sure you want to logout?</p>
-      <button class="fancy-btn" onclick="window.logout()">Yes, logout</button>
-      <button class="fancy-btn" onclick="closeModal()">Cancel</button>
-    `); closeUserMenu();
-  };
-}
-// ... (остальной код без изменений)
 // ====== On Load ======
 window.onload = function () { loadData(); renderAll(); };
 window.openQuestModal = openQuestModal;
