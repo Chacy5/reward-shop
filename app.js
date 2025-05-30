@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
-import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
+import { getFirestore, doc, setDoc, onSnapshot, getDoc } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
 
 // === Firebase Config ===
 const firebaseConfig = {
@@ -14,6 +14,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
+// === State ===
 let currentUser = localStorage.getItem('pawCurrentUser') || "";
 let groupId = "demo-family";
 let allData = {
@@ -25,7 +26,6 @@ let allData = {
   points: {}
 };
 let isInitialSync = true;
-let currentPage = "main";
 
 // === Firestore Sync ===
 function syncToFirebase() {
@@ -34,12 +34,15 @@ function syncToFirebase() {
 function listenFromFirebase() {
   onSnapshot(doc(db, "groups", groupId), (docSnap) => {
     if (docSnap.exists()) {
+      // Не трём local user, если local user не пустой и не совпадает с currentUser после выхода
       const prevUser = currentUser;
       Object.assign(allData, docSnap.data());
+      // Если это первый запуск, добавим демо-данные только если база пуста
       if (isInitialSync && Object.keys(allData.users).length === 0 && allData.quests.length === 0 && allData.rewards.length === 0) {
         addDemoData();
       }
       isInitialSync = false;
+      // Авто-восстановление пользователя, если он был залогинен
       if (prevUser && allData.users[prevUser]) {
         currentUser = prevUser;
         localStorage.setItem('pawCurrentUser', currentUser);
@@ -50,24 +53,24 @@ function listenFromFirebase() {
 }
 listenFromFirebase();
 
-// === Demo Data ===
+// === Примеры при первом запуске ===
 function addDemoData() {
   allData.quests = [
-    { type: 'daily', name: 'Feed the cat', emoji: '🧑‍🍳', desc: 'Give breakfast to your cat', pts: 3 },
-    { type: 'daily', name: 'Morning walk', emoji: '🚶‍♂️', desc: '10 min walk in the park', pts: 2 },
-    { type: 'weekly', name: 'Clean up room', emoji: '🧹', desc: 'Tidy up your room on Saturday', pts: 5 },
-    { type: 'weekly', name: 'Call grandma', emoji: '☎️', desc: 'Check in on your grandma', pts: 4 },
-    { type: 'event', name: 'Birthday surprise', emoji: '🎉', desc: 'Organize a surprise for a friend', pts: 10 }
+    { type: 'daily', name: 'Feed the cat', emoji: '🧑‍🍳', desc: 'Give breakfast to your cat', pts: 3, createdAt: new Date().toISOString() },
+    { type: 'daily', name: 'Morning walk', emoji: '🚶‍♂️', desc: '10 min walk in the park', pts: 2, createdAt: new Date().toISOString() },
+    { type: 'weekly', name: 'Clean up room', emoji: '🧹', desc: 'Tidy up your room on Saturday', pts: 5, createdAt: new Date().toISOString() },
+    { type: 'weekly', name: 'Call grandma', emoji: '☎️', desc: 'Check in on your grandma', pts: 4, createdAt: new Date().toISOString() },
+    { type: 'event', name: 'Birthday surprise', emoji: '🎉', desc: 'Organize a surprise for a friend', pts: 10, createdAt: new Date().toISOString() },
   ];
   allData.completed = [
-    { username: "demo", type: 'daily', name: 'Brush teeth', emoji: '🦷', desc: 'Morning and evening', pts: 1, completedAt: new Date(Date.now() - 86400000).toISOString() }
+    { username: "demo", type: 'daily', name: 'Brush teeth', emoji: '🦷', desc: 'Morning and evening', pts: 1, createdAt: new Date().toISOString(), completedAt: new Date(Date.now() - 86400000).toISOString() }
   ];
   allData.rewards = [
     { name: 'Chocolate bar', emoji: '🍫', desc: 'Sweet treat', cost: 6 },
     { name: 'Coffee break', emoji: '☕', desc: 'Buy yourself a nice coffee', cost: 8 },
     { name: 'Movie night', emoji: '🎬', desc: 'Watch a movie with popcorn', cost: 14 },
     { name: 'Game hour', emoji: '🎮', desc: 'Play your favorite game for 1 hour', cost: 10 },
-    { name: 'Cute sticker', emoji: '🧸', desc: 'Get a cute sticker for your notebook', cost: 2 }
+    { name: 'Cute sticker', emoji: '🧸', desc: 'Get a cute sticker for your notebook', cost: 2 },
   ];
   allData.claimed = [
     { username: "demo", name: 'Donut', emoji: '🍩', desc: 'Yummy donut', cost: 5, claimedAt: new Date(Date.now() - 3600 * 1000 * 6).toISOString(), done: true }
@@ -107,7 +110,7 @@ function userRole() {
   return (allData.users[currentUser] && allData.users[currentUser].role) || "user";
 }
 
-// === Modal Windows ===
+// === Модальные окна ===
 window.showLogin = function showLogin() {
   closeAllModals();
   document.getElementById('login-modal-bg').style.display = 'flex';
@@ -186,64 +189,7 @@ window.signOut = function signOut() {
   renderAll();
 }
 
-// === Navigation and Page Switch ===
-const pages = document.querySelectorAll('.page');
-const navLinks = document.querySelectorAll('nav.bottom a');
-navLinks.forEach(link => {
-  link.addEventListener('click', () => {
-    const target = link.getAttribute('data-page');
-    currentPage = target;
-    renderAll();
-  });
-});
-
-// === Filters/Search ===
-let questFilterType = "", questFilterText = "";
-let rewardFilterText = "";
-function renderQuestFilters() {
-  const bar = document.createElement('div');
-  bar.className = "filter-bar";
-  bar.innerHTML = `
-    <label>Type:
-      <select onchange="window.setQuestFilterType(this.value)">
-        <option value="">All</option>
-        <option value="daily"${questFilterType==='daily'?' selected':''}>Daily</option>
-        <option value="weekly"${questFilterType==='weekly'?' selected':''}>Weekly</option>
-        <option value="event"${questFilterType==='event'?' selected':''}>Event</option>
-      </select>
-    </label>
-    <label>Search:
-      <input type="text" placeholder="Name/desc" value="${questFilterText}" oninput="window.setQuestFilterText(this.value)" />
-    </label>
-  `;
-  return bar;
-}
-window.setQuestFilterType = function(v) { questFilterType = v; renderAll(); }
-window.setQuestFilterText = function(v) { questFilterText = v; renderAll(); }
-function filterQuests() {
-  let arr = allData.quests || [];
-  if (questFilterType) arr = arr.filter(q=>q.type===questFilterType);
-  if (questFilterText) arr = arr.filter(q=>(q.name+q.desc).toLowerCase().includes(questFilterText.toLowerCase()));
-  return arr;
-}
-function renderRewardFilters() {
-  const bar = document.createElement('div');
-  bar.className = "filter-bar";
-  bar.innerHTML = `
-    <label>Search:
-      <input type="text" placeholder="Reward..." value="${rewardFilterText}" oninput="window.setRewardFilterText(this.value)" />
-    </label>
-  `;
-  return bar;
-}
-window.setRewardFilterText = function(v) { rewardFilterText = v; renderAll(); }
-function filterRewards() {
-  let arr = allData.rewards || [];
-  if (rewardFilterText) arr = arr.filter(r=>(r.name+r.desc).toLowerCase().includes(rewardFilterText.toLowerCase()));
-  return arr;
-}
-
-// === Main, Quests, Shop, Claimed, Settings Pages ===
+// === Главная ===
 function renderMain() {
   let pts = allData.points[currentUser] || 0;
   document.getElementById('page-main').innerHTML = `
@@ -255,31 +201,51 @@ function renderMain() {
       </div>
       <p style="font-size: 1rem; color: #777">paw points</p>
     </div>
+    <div class="section" style="display: flex; justify-content: space-around; text-align: center;">
+      <div style="flex: 1; padding: 10px;">
+        <div style="font-size: 1.8rem; color: var(--main-color);">📅</div>
+        <div style="font-weight: bold; margin-top: 5px;">Today: <span id="count-today">0</span></div>
+      </div>
+      <div style="flex: 1; padding: 10px;">
+        <div style="font-size: 1.8rem; color: var(--main-color);">🗓️</div>
+        <div style="font-weight: bold; margin-top: 5px;">This Week: <span id="count-week">0</span></div>
+      </div>
+      <div style="flex: 1; padding: 10px;">
+        <div style="font-size: 1.8rem; color: var(--main-color);">📈</div>
+        <div style="font-weight: bold; margin-top: 5px;">All Time: <span id="count-all">0</span></div>
+      </div>
+    </div>
     ${
       userRole() === 'admin' ?
       `<div class="section" style="text-align: center;display:flex;flex-wrap:wrap;justify-content:center;gap:16px;">
         <button class="paw-action-btn" type="button" onclick="showQuestModal()">
-          <img src="image6" width="28" height="28" style="vertical-align:middle;" alt="Quest"/> New Quest
+          <svg class="paw-emoji icon-svg" width="28" height="28" viewBox="0 0 24 24"><use href="#solar-list-check"/></svg> New Quest
         </button>
         <button class="paw-action-btn" type="button" onclick="showRewardModal()">
-          <img src="image2" width="28" height="28" style="vertical-align:middle;" alt="Reward"/> New Reward
+          <svg class="paw-emoji icon-svg" width="28" height="28" viewBox="0 0 24 24"><use href="#solar-gift"/></svg> New Reward
         </button>
       </div>`
       : ''
     }
   `;
+  renderStats();
 }
+
+// === Квесты ===
 function renderQuests() {
   const page = document.getElementById('page-tasks');
-  page.innerHTML = `<div class="section" style="text-align: center;"><h2 style="font-size: 2rem; color: var(--text-dark);">Quests</h2></div>`;
-  page.appendChild(renderQuestFilters());
+  page.innerHTML = `
+    <div class="section" style="text-align: center;">
+      <h2 style="font-size: 2rem; color: var(--text-dark);">Quests</h2>
+      <p style="color: #666; margin: 10px 0;">Complete quests to earn paw points!</p>
+    </div>
+  `;
   const section = document.createElement('div');
   section.className = 'section';
-  let quests = filterQuests();
-  if (!quests || quests.length === 0) section.innerHTML = '<p>No quests yet.</p>';
+  if (!allData.quests || allData.quests.length === 0) section.innerHTML = '<p>No quests yet.</p>';
   else {
     ['daily', 'weekly', 'event'].forEach(type => {
-      const filtered = quests.filter(q => q.type === type);
+      const filtered = allData.quests.filter(q => q.type === type);
       if (filtered.length === 0) return;
       const h = document.createElement('h3');
       h.textContent = type === 'daily' ? 'Daily' : type === 'weekly' ? 'Weekly' : 'Events';
@@ -333,6 +299,8 @@ function renderCompleted() {
   }
   page.appendChild(completedSection);
 }
+
+// === Награды и Магазин ===
 function renderShop() {
   const pts = allData.points[currentUser] || 0;
   const page = document.getElementById('page-shop');
@@ -342,14 +310,12 @@ function renderShop() {
       <p style="font-size: 1.1rem; color: #333; margin: 8px 0;">🐾 Balance: <strong id="points">${pts}</strong></p>
     </div>
   `;
-  page.appendChild(renderRewardFilters());
   const section = document.createElement('div');
   section.className = 'section';
-  let rewards = filterRewards();
-  if (!rewards || rewards.length === 0) {
+  if (!allData.rewards || allData.rewards.length === 0) {
     section.innerHTML = '<p>No rewards yet.</p>';
   } else {
-    rewards.forEach((r, i) => {
+    allData.rewards.forEach((r, i) => {
       section.innerHTML += `
         <div style="border: 2px solid #6fedd1; border-radius: 12px; padding: 12px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
           <div>
@@ -371,6 +337,8 @@ function renderShop() {
   }
   page.appendChild(section);
 }
+
+// === Полученные награды ===
 function renderClaimed() {
   const page = document.getElementById('page-claimed');
   page.innerHTML = `
@@ -395,21 +363,21 @@ function renderClaimed() {
             </div>
             ${
               r.done
-              ? `<button class="paw-action-btn" style="background:#d0ffd0;color:#0b8f57;display:flex;align-items:center;gap:6px;" disabled>
-                  <svg width="28" height="28" viewBox="0 0 24 24"><use href="#paw"/></svg> Received
-                </button>`
+              ? `<button class="paw-btn done" disabled title="Received">🐾 Received</button>`
               : userRole()==='user'
-                ? `<button class="paw-action-btn" disabled>Waiting...</button>`
-                : `<button class="paw-action-btn" onclick="markRewardDone(${i})">Mark as received</button>`
+                ? `<button class="paw-btn" disabled title="Only Questmaster can mark">🐾 Mark as received</button>`
+                : `<button class="paw-btn" onclick="markRewardDone(${i})" title="Mark as received">🐾 Mark as received</button>`
             }
           </div>
-          <small>Claimed: ${r.claimedAt?new Date(r.claimedAt).toLocaleString():"-"}</small>
+          <small>Claimed: ${new Date(r.claimedAt).toLocaleString()}</small>
         </div>
       `;
     });
   }
   page.appendChild(section);
 }
+
+// === Настройки ===
 function renderSettings() {
   const role = userRole();
   document.getElementById('page-settings').innerHTML = `
@@ -420,15 +388,13 @@ function renderSettings() {
     </div>
     <div class="settings-section">
       <h3>Role</h3>
-      <div style="margin-bottom:12px;display:flex;gap:30px;align-items:center;justify-content:center;">
-        <label style="display:flex;align-items:center;gap:7px;">
+      <div style="margin-bottom:12px;">
+        <label>
           <input type="radio" name="role" value="user" ${role==='user'?'checked':''} onchange="switchRole('user')" />
-          <span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#f6edd1;box-shadow:0 0 2px #aaa;margin-right:5px;"></span>
           Performer
         </label>
-        <label style="display:flex;align-items:center;gap:7px;">
+        <label style="margin-left:24px;">
           <input type="radio" name="role" value="admin" ${role==='admin'?'checked':''} onchange="switchRole('admin')" />
-          <span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#f9e28e;box-shadow:0 0 2px #aaa;margin-right:5px;"></span>
           Questmaster
         </label>
       </div>
@@ -438,7 +404,7 @@ function renderSettings() {
       <h3>About</h3>
       <div style="color:#065f54;">Talk to my paw — локальное приложение для квестов и наград 🐾</div>
     </div>
-    <button class="logout-btn" onclick="signOut()">Sign out</button>
+    <button class="logout-btn" onclick="signOut()">Выйти из аккаунта</button>
   `;
 }
 window.switchRole = function switchRole(role) {
@@ -468,7 +434,8 @@ window.addTask = function addTask() {
   const desc = document.getElementById('taskDesc').value.trim();
   const pts = parseInt(document.getElementById('taskPoints').value);
   if (!name || isNaN(pts)) return alert('Please enter valid quest data.');
-  allData.quests.push({ type, name, emoji, desc, pts });
+  const createdAt = new Date().toISOString();
+  allData.quests.push({ type, name, emoji, desc, pts, createdAt });
   syncToFirebase();
   renderAll();
 };
@@ -536,13 +503,41 @@ window.changeRewardAmount = function changeRewardAmount(index) {
   }
 };
 
-// === Render All and Navigation ===
-function renderAll() {
+// === Статистика ===
+function renderStats() {
+  const today = new Date().toDateString();
+  const week = new Date();
+  week.setDate(week.getDate() - 7);
+  const userCompleted = (allData.completed||[]).filter(q => q.username === currentUser);
+  const countToday = userCompleted.filter(q => new Date(q.completedAt).toDateString() === today).length;
+  const countWeek = userCompleted.filter(q => new Date(q.completedAt) > week).length;
+  const countAll = userCompleted.length;
+  document.querySelectorAll('#count-today').forEach(el => el.innerText = countToday);
+  document.querySelectorAll('#count-week').forEach(el => el.innerText = countWeek);
+  document.querySelectorAll('#count-all').forEach(el => el.innerText = countAll);
+  document.querySelectorAll('#points').forEach(el => el.innerText = allData.points[currentUser] || 0);
+}
+
+// === Навигация ===
+const pages = document.querySelectorAll('.page');
+const navLinks = document.querySelectorAll('nav.bottom a');
+navLinks.forEach(link => {
+  link.addEventListener('click', () => {
+    const target = link.getAttribute('data-page');
+    pages.forEach(p => p.classList.remove('active'));
+    document.getElementById(`page-${target}`).classList.add('active');
+    navLinks.forEach(l => l.classList.remove('active'));
+    link.classList.add('active');
+    renderAll(target);
+  });
+});
+
+// === Рендерить всё ===
+function renderAll(page) {
   updateUserUI();
-  pages.forEach(p => p.classList.remove('active'));
-  navLinks.forEach(l => l.classList.remove('active'));
   if (!currentUser) {
     showLogin();
+    pages.forEach(p => p.classList.remove('active'));
     return;
   }
   renderMain();
@@ -550,12 +545,15 @@ function renderAll() {
   renderQuests();
   renderClaimed();
   renderSettings();
-  document.getElementById(`page-${currentPage}`).classList.add('active');
-  navLinks.forEach(l => { if (l.getAttribute('data-page') === currentPage) l.classList.add('active'); });
-  document.getElementById('paw-balance').style.display = (currentPage !== "settings" && (currentUser)) ? "flex" : "none";
-  document.getElementById('paw-balance-val').textContent = (allData.points[currentUser] || 0);
+  pages.forEach(p => p.classList.remove('active'));
+  const activePage = page ? `page-${page}` : 'page-main';
+  document.getElementById(activePage).classList.add('active');
+  navLinks.forEach(l => l.classList.remove('active'));
+  navLinks.forEach(l => { if (l.getAttribute('data-page') === (page||'main')) l.classList.add('active'); });
+  renderStats();
 }
 
+// === On load ===
 window.addEventListener('DOMContentLoaded', () => {
   if (currentUser && !allData.users[currentUser]) {
     setUser(currentUser);

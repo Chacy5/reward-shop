@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title>Talk to my paw</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link href="https://fonts.googleapis.com/css2?family=Montserrat+Alternates:wght@400;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
@@ -11,20 +11,15 @@
   <div class="loader" id="loader" style="display:none">Loading...</div>
   <header>
     <span class="logo-wrap">
-      <img src="image7" alt="Talk to my paw" class="logo-svg" />
-    </span>
-    <span id="paw-balance" style="display:none;">
-      <span class="paw-balance-text">🐾 <span id="paw-balance-val">0</span></span>
+      <img src="image1" alt="Talk to my paw" class="logo-svg" width="80" height="80" />
     </span>
     <span id="user-info">
       <button id="show-login-btn" title="Sign in" type="button">
-        <img src="image4" alt="User" width="30" height="30" style="vertical-align:middle"/>
+        <svg width="30" height="30" viewBox="0 0 24 24" class="icon-svg"><use href="#solar-user"/></svg>
       </button>
       <span id="user-profile" style="display:none;">
         <span id="user-name"></span>
-        <button id="signout-btn" type="button" onclick="signOut()" style="display:none;">
-          <img src="image5" alt="Sign out" width="28" height="28" style="vertical-align:middle"/>
-        </button>
+        <button id="signout-btn" type="button" onclick="signOut()" style="display:none;">Sign out</button>
       </span>
     </span>
   </header>
@@ -34,16 +29,13 @@
     <div id="page-tasks" class="page"></div>
     <div id="page-claimed" class="page"></div>
     <div id="page-settings" class="page"></div>
-    <div style="height:90px;"></div>
   </main>
   <!-- Login Modal -->
   <div id="login-modal-bg" class="modal-bg" style="display:none;">
     <div class="modal card-modal">
-      <button class="modal-close" type="button" onclick="closeLoginModal()">
-        <svg width="28" height="28" viewBox="0 0 24 24" class="icon-svg"><use href="#solar-close"/></svg>
-      </button>
+      <button class="modal-close" type="button" onclick="closeLoginModal()"><svg width="28" height="28" viewBox="0 0 24 24" class="icon-svg"><use href="#solar-close"/></svg></button>
       <div class="modal-header">
-        <img src="image4" width="40" height="40" alt="User"/>
+        <svg width="40" height="40" viewBox="0 0 24 24" class="icon-svg"><use href="#solar-user"/></svg>
         <h2>Sign In</h2>
       </div>
       <div class="input-group">
@@ -56,7 +48,7 @@
           <input type="password" id="login-password" autocomplete="current-password" placeholder="Password" />
         </label>
         <button class="paw-action-btn wide-btn" type="button" onclick="doLogin()">
-          <img src="image4" width="28" height="28" alt="User" style="vertical-align:middle;"/> Sign In
+          <svg class="paw-emoji icon-svg" width="28" height="28" viewBox="0 0 24 24"><use href="#solar-user"/></svg> Sign In
         </button>
         <div style="text-align:center;margin-top:8px;">
           <span id="login-err" style="color:#c00;font-size:0.97em;"></span>
@@ -72,11 +64,9 @@
   <!-- Register Modal -->
   <div id="register-modal-bg" class="modal-bg" style="display:none;">
     <div class="modal card-modal">
-      <button class="modal-close" type="button" onclick="closeRegisterModal()">
-        <svg width="28" height="28" viewBox="0 0 24 24" class="icon-svg"><use href="#solar-close"/></svg>
-      </button>
+      <button class="modal-close" type="button" onclick="closeRegisterModal()"><svg width="28" height="28" viewBox="0 0 24 24" class="icon-svg"><use href="#solar-close"/></svg></button>
       <div class="modal-header">
-        <img src="image4" width="40" height="40" alt="User"/>
+        <svg width="40" height="40" viewBox="0 0 24 24" class="icon-svg"><use href="#solar-user"/></svg>
         <h2>Register</h2>
       </div>
       <div class="input-group">
@@ -89,7 +79,7 @@
           <input type="password" id="register-password" autocomplete="new-password" placeholder="Choose password" />
         </label>
         <button class="paw-action-btn wide-btn" type="button" onclick="doRegister()">
-          <img src="image4" width="28" height="28" alt="User" style="vertical-align:middle;"/> Register
+          <svg class="paw-emoji icon-svg" width="28" height="28" viewBox="0 0 24 24"><use href="#solar-user"/></svg> Register
         </button>
         <div style="text-align:center;margin-top:8px;">
           <span id="register-err" style="color:#c00;font-size:0.97em;"></span>
@@ -105,11 +95,9 @@
   <!-- Quest Modal -->
   <div id="quest-modal-bg" class="modal-bg" style="display:none;">
     <div class="modal card-modal">
-      <button class="modal-close" type="button" onclick="closeQuestModal()">
-        <svg width="28" height="28" viewBox="0 0 24 24" class="icon-svg"><use href="#solar-close"/></svg>
-      </button>
+      <button class="modal-close" type="button" onclick="closeQuestModal()"><svg width="28" height="28" viewBox="0 0 24 24" class="icon-svg"><use href="#solar-close"/></svg></button>
       <div class="modal-header">
-        <img src="image6" width="40" height="40" alt="Quest"/>
+        <svg width="40" height="40" viewBox="0 0 24 24" class="icon-svg"><use href="#solar-list-check"/></svg>
         <h2>Add Quest</h2>
       </div>
       <div class="input-group">
@@ -147,7 +135,7 @@
           <input type="number" id="taskPoints" placeholder="Reward points" />
         </label>
         <button class="paw-action-btn wide-btn" type="button" onclick="addTask(); closeQuestModal();">
-          <img src="image6" width="28" height="28" style="vertical-align:middle;" alt="Quest"/> Add Quest
+          <svg class="paw-emoji icon-svg" width="28" height="28" viewBox="0 0 24 24"><use href="#solar-list-check"/></svg> Add Quest
         </button>
       </div>
     </div>
@@ -155,11 +143,9 @@
   <!-- Reward Modal -->
   <div id="reward-modal-bg" class="modal-bg" style="display:none;">
     <div class="modal card-modal">
-      <button class="modal-close" type="button" onclick="closeRewardModal()">
-        <svg width="28" height="28" viewBox="0 0 24 24" class="icon-svg"><use href="#solar-close"/></svg>
-      </button>
+      <button class="modal-close" type="button" onclick="closeRewardModal()"><svg width="28" height="28" viewBox="0 0 24 24" class="icon-svg"><use href="#solar-close"/></svg></button>
       <div class="modal-header">
-        <img src="image2" width="40" height="40" alt="Reward"/>
+        <svg width="40" height="40" viewBox="0 0 24 24" class="icon-svg"><use href="#solar-gift"/></svg>
         <h2>Add Reward</h2>
       </div>
       <div class="input-group">
@@ -188,34 +174,42 @@
           <input type="number" id="rewardCost" placeholder="Cost in paw points" />
         </label>
         <button class="paw-action-btn wide-btn" type="button" onclick="addReward(); closeRewardModal();">
-          <img src="image2" width="28" height="28" style="vertical-align:middle;" alt="Reward"/> Add Reward
+          <svg class="paw-emoji icon-svg" width="28" height="28" viewBox="0 0 24 24"><use href="#solar-gift"/></svg> Add Reward
         </button>
       </div>
     </div>
   </div>
+  <!-- SVG ICONS ONLY -->
   <svg style="display:none;">
+    <symbol id="solar-gift" viewBox="0 0 24 24"><rect x="3" y="9" width="18" height="10" rx="2" stroke="#065f54" stroke-width="1.5" fill="none"/><path d="M3 13h18M12 9V5m0 0C9.8 5 9 7.1 9 8.5S9.8 12 12 12s3-2.1 3-3.5S14.2 5 12 5z" stroke="#065f54" stroke-width="1.5" fill="none"/></symbol>
+    <symbol id="solar-list-check" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2" stroke="#065f54" stroke-width="1.5" fill="none"/><path d="M8 9h8M8 13h5M7 17l2 2 4-4" stroke="#065f54" stroke-width="1.5" fill="none"/></symbol>
+    <symbol id="solar-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4" fill="none" stroke="#065f54" stroke-width="1.5"/><path d="M3 20v-1a6 6 0 0 1 12 0v1" fill="none" stroke="#065f54" stroke-width="1.5"/></symbol>
+    <symbol id="solar-home" viewBox="0 0 24 24"><path d="M3 11.5L12 4.5l9 7v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-8z" stroke="#065f54" stroke-width="1.5" fill="none"/><path d="M9 21V12h6v9" stroke="#065f54" stroke-width="1.5" fill="none"/></symbol>
+    <symbol id="solar-shop" viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="13" rx="2" stroke="#065f54" stroke-width="1.5" fill="none"/><path d="M7 7V3h10v4" stroke="#065f54" stroke-width="1.5" fill="none"/></symbol>
+    <symbol id="solar-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3" fill="none" stroke="#065f54" stroke-width="1.5"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2.07 2.07 0 0 1-2.93 2.93l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2.07 2.07 0 0 1-4.14 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2.07 2.07 0 0 1-2.93-2.93l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2.07 2.07 0 0 1 0-4.14h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2.07 2.07 0 0 1 2.93-2.93l.06.06a1.65 1.65 0 0 0 1.82.33h.02A1.65 1.65 0 0 0 9 5.09V5a2.07 2.07 0 0 1 4.14 0v.09a1.65 1.65 0 0 0 1 1.51h.02a1.65 1.65 0 0 0 1.82-.33l.06-.06a2.07 2.07 0 0 1 2.93 2.93l-.06.06a1.65 1.65 0 0 0-.33 1.82v.02A1.65 1.65 0 0 0 19.4 9H21a2.07 2.07 0 0 1 0 4.14h-.09a1.65 1.65 0 0 0-1.51 1z" fill="none" stroke="#065f54" stroke-width="1.1"/></symbol>
+    <symbol id="solar-medal-star" viewBox="0 0 24 24"><circle cx="12" cy="9" r="6" stroke="#065f54" stroke-width="1.5" fill="none"/><path d="M12 15v6m-3-6-2 6m8-6 2 6" stroke="#065f54" stroke-width="1.5" fill="none"/></symbol>
     <symbol id="solar-close" viewBox="0 0 24 24"><path d="M6 6l12 12M6 18L18 6" stroke="#065f54" stroke-width="1.5" fill="none"/></symbol>
     <symbol id="paw" viewBox="0 0 24 24"><ellipse cx="12" cy="18" rx="4" ry="3.5" fill="#6fedd1"/><ellipse cx="5.5" cy="12" rx="2.5" ry="3" fill="#6fedd1"/><ellipse cx="18.5" cy="12" rx="2.5" ry="3" fill="#6fedd1"/><ellipse cx="8" cy="7.5" rx="2" ry="2.5" fill="#6fedd1"/><ellipse cx="16" cy="7.5" rx="2" ry="2.5" fill="#6fedd1"/></symbol>
   </svg>
   <nav class="bottom">
     <a data-page="main" class="active" title="Home">
-      <img class="nav-icon-img" src="image1" alt="Home" />
+      <svg class="nav-icon icon-svg" width="32" height="32" viewBox="0 0 24 24"><use href="#solar-home"/></svg>
       <span class="nav-label">Home</span>
     </a>
     <a data-page="shop" title="Shop">
-      <img class="nav-icon-img" src="image2" alt="Shop" />
+      <svg class="nav-icon icon-svg" width="32" height="32" viewBox="0 0 24 24"><use href="#solar-shop"/></svg>
       <span class="nav-label">Shop</span>
     </a>
     <a data-page="tasks" title="Quests">
-      <img class="nav-icon-img" src="image3" alt="Quests" />
+      <svg class="nav-icon icon-svg" width="32" height="32" viewBox="0 0 24 24"><use href="#solar-list-check"/></svg>
       <span class="nav-label">Quests</span>
     </a>
     <a data-page="claimed" title="Rewards">
-      <img class="nav-icon-img" src="image5" alt="Rewards" />
+      <svg class="nav-icon icon-svg" width="32" height="32" viewBox="0 0 24 24"><use href="#solar-medal-star"/></svg>
       <span class="nav-label">Rewards</span>
     </a>
     <a data-page="settings" title="Settings">
-      <img class="nav-icon-img" src="image6" alt="Settings" />
+      <svg class="nav-icon icon-svg" width="32" height="32" viewBox="0 0 24 24"><use href="#solar-settings"/></svg>
       <span class="nav-label">Settings</span>
     </a>
   </nav>
