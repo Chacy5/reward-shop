@@ -1,7 +1,7 @@
-// Импорт Firebase и Firestore (замените конфиг на свой!)
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
 import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
 
+// --- FIREBASE ---
 const firebaseConfig = {
   apiKey: "AIzaSyBDHjCE7CYC_jxL7EPjUApVvrd8avHmcNA",
   authDomain: "talk-to-my-paw.firebaseapp.com",
@@ -47,23 +47,23 @@ listenFromFirebase();
 // --- DEMO DATA ---
 function addDemoData() {
   allData.quests = [
-    { type: 'daily', name: 'Feed the cat', emoji: '🧑‍🍳', desc: 'Give breakfast to your cat', pts: 3, cat: 'Уход' },
-    { type: 'weekly', name: 'Clean up room', emoji: '🧹', desc: 'Tidy up your room on Saturday', pts: 5, cat: 'Дом' }
+    { type: 'daily', name: 'Feed the cat', emoji: '🧑‍🍳', desc: 'Give breakfast to your cat', pts: 3, cat: 'Care' },
+    { type: 'weekly', name: 'Clean up room', emoji: '🧹', desc: 'Tidy up your room on Saturday', pts: 5, cat: 'Home' }
   ];
   allData.rewards = [
-    { name: 'Chocolate bar', emoji: '🍫', desc: 'Sweet treat', cost: 6, cat: 'Еда' },
-    { name: 'Movie night', emoji: '🎬', desc: 'Watch a movie', cost: 14, cat: 'Развлечения' }
+    { name: 'Chocolate bar', emoji: '🍫', desc: 'Sweet treat', cost: 6, cat: 'Food' },
+    { name: 'Movie night', emoji: '🎬', desc: 'Watch a movie', cost: 14, cat: 'Fun' }
   ];
   allData.completed = [];
   allData.claimed = [];
   allData.points = { demo: 11 };
   allData.users.demo = { password: "demo", role: "user" };
-  allData.customQuestCats = ['Уход', 'Дом'];
-  allData.customRewardCats = ['Еда', 'Развлечения'];
+  allData.customQuestCats = ['Care', 'Home'];
+  allData.customRewardCats = ['Food', 'Fun'];
   syncToFirebase();
 }
 
-// --- User Logic, Demo Mode ---
+// --- User/Demo Logic ---
 function isDemo() { return !currentUser; }
 function userRole() {
   return (allData.users[currentUser] && allData.users[currentUser].role) || "user";
@@ -79,7 +79,7 @@ function setUser(login) {
   renderAll();
 }
 
-// --- Навигация ---
+// --- Navigation ---
 const pages = document.querySelectorAll('.page');
 const navLinks = document.querySelectorAll('nav.bottom a');
 navLinks.forEach(link => {
@@ -102,30 +102,46 @@ function updatePages() {
     document.getElementById('page-' + currentPage).classList.add('active');
     navLinks.forEach(l => { if (l.getAttribute('data-page') === currentPage) l.classList.add('active'); });
   }
-  // Баланс виден на всех, кроме settings и если есть пользователь или демо
+  // Баланс во всех кроме настроек
   document.getElementById('paw-balance').style.display = (currentPage !== "settings" && (currentUser || isDemo())) ? "flex" : "none";
   document.getElementById('paw-balance-val').textContent = (allData.points[currentUser] || 0);
 }
 
-// --- Категории (кастомные) ---
+// --- Категории ---
 function getQuestCats() {
-  return ['Уход', 'Дом', 'Учёба', ...allData.customQuestCats.filter(c=>c)];
+  return ["Care", "Home", "Study", ...allData.customQuestCats.filter(c=>c)];
 }
 function getRewardCats() {
-  return ['Еда', 'Развлечения', ...allData.customRewardCats.filter(c=>c)];
+  return ["Food", "Fun", ...allData.customRewardCats.filter(c=>c)];
 }
-window.addQuestCat = function addQuestCat(cat) {
+window.addQuestCat = function(cat) {
   if (!cat) return;
   if (!allData.customQuestCats.includes(cat)) allData.customQuestCats.push(cat);
   syncToFirebase();
   renderAll();
 }
-window.addRewardCat = function addRewardCat(cat) {
+window.addRewardCat = function(cat) {
   if (!cat) return;
   if (!allData.customRewardCats.includes(cat)) allData.customRewardCats.push(cat);
   syncToFirebase();
   renderAll();
 }
+
+// --- Modal category select handlers ---
+window.questCatSelectHandler = function(sel) {
+  if (sel.value === "__custom__") {
+    document.getElementById("taskCatCustom").style.display = "";
+  } else {
+    document.getElementById("taskCatCustom").style.display = "none";
+  }
+};
+window.rewardCatSelectHandler = function(sel) {
+  if (sel.value === "__custom__") {
+    document.getElementById("rewardCatCustom").style.display = "";
+  } else {
+    document.getElementById("rewardCatCustom").style.display = "none";
+  }
+};
 
 // --- Main ---
 function renderMain() {
@@ -155,8 +171,8 @@ function renderMain() {
 function renderQuests() {
   const page = document.getElementById('page-tasks');
   const quests = isDemo() ? [
-    { type: 'daily', name: 'Feed the cat', emoji: '🧑‍🍳', desc: 'Give breakfast to your cat', pts: 3, cat: 'Уход' },
-    { type: 'weekly', name: 'Clean up room', emoji: '🧹', desc: 'Tidy up your room on Saturday', pts: 5, cat: 'Дом' }
+    { type: 'daily', name: 'Feed the cat', emoji: '🧑‍🍳', desc: 'Give breakfast to your cat', pts: 3, cat: 'Care' },
+    { type: 'weekly', name: 'Clean up room', emoji: '🧹', desc: 'Tidy up your room on Saturday', pts: 5, cat: 'Home' }
   ] : allData.quests;
   page.innerHTML = `<div class="section" style="text-align: center;"><h2 style="font-size: 2rem; color: var(--text-dark);">Quests</h2></div>`;
   const section = document.createElement('div');
@@ -164,6 +180,7 @@ function renderQuests() {
   if (!quests || quests.length === 0) section.innerHTML = '<p>No quests yet.</p>';
   else {
     quests.forEach((q, i) => {
+      const showBtns = !isDemo() && userRole()==="user";
       const card = document.createElement('div');
       card.className = 'card ' + q.type;
       card.innerHTML = `
@@ -173,20 +190,47 @@ function renderQuests() {
             <span>(${q.pts} points)</span>
             <p class="desc">${q.desc || ''} <span style="font-size:0.9em;color:#888;">[${q.cat||''}]</span></p>
           </div>
+          <div>
+            ${showBtns ? `<button onclick="completeTask(${i})" title="Complete"><img src='image5' width='22' height='22' alt="complete"></button>` : ''}
+            ${!isDemo() && userRole()==="admin" ? `<button onclick="deleteQuest(${i})" title="Delete"><img src='image4' width='22' height='22' alt="delete"></button>` : ''}
+          </div>
         </div>
       `;
       section.appendChild(card);
     });
   }
   page.appendChild(section);
+  if (!isDemo()) renderCompleted();
+}
+function renderCompleted() {
+  let page = document.getElementById('page-tasks');
+  let completedSection = document.createElement('div');
+  completedSection.className = 'section';
+  completedSection.innerHTML = `<h2 style="color:var(--text-dark);margin-bottom:10px;">✅ Completed Quests</h2>`;
+  const userCompleted = (allData.completed||[]).filter(q => q.username === currentUser);
+  if (userCompleted.length === 0) {
+    completedSection.innerHTML += '<p>No completed quests yet.</p>';
+  } else {
+    userCompleted.forEach(q => {
+      const card = document.createElement('div');
+      card.className = 'card daily';
+      card.innerHTML = `
+        <b>${q.emoji ? q.emoji + ' ' : ''}${q.name}</b> <span>(${q.pts} points)</span>
+        <p class="desc">${q.desc || ''}</p>
+        <small>Completed: ${new Date(q.completedAt).toLocaleString()}</small>
+      `;
+      completedSection.appendChild(card);
+    });
+  }
+  page.appendChild(completedSection);
 }
 
 // --- Rewards (Shop) ---
 function renderShop() {
   const page = document.getElementById('page-shop');
   const rewards = isDemo() ? [
-    { name: 'Chocolate bar', emoji: '🍫', desc: 'Sweet treat', cost: 6, cat: 'Еда' },
-    { name: 'Movie night', emoji: '🎬', desc: 'Watch a movie', cost: 14, cat: 'Развлечения' }
+    { name: 'Chocolate bar', emoji: '🍫', desc: 'Sweet treat', cost: 6, cat: 'Food' },
+    { name: 'Movie night', emoji: '🎬', desc: 'Watch a movie', cost: 14, cat: 'Fun' }
   ] : allData.rewards;
   let pts = isDemo() ? 11 : (allData.points[currentUser] || 0);
   page.innerHTML = `<div class="section" style="text-align: center;">
@@ -204,7 +248,18 @@ function renderShop() {
           <div>
             <strong>${r.emoji ? r.emoji + ' ' : ''}${r.name}</strong>
             <div style="color: #666; font-size: 0.9rem;">${r.desc} <span style="font-size:0.9em;color:#888;">[${r.cat||''}]</span></div>
+            ${!isDemo() && userRole()==="admin"?`
+              <div style="margin-top:8px;">
+                <button onclick="deleteReward(${i})" style="background:#ffb2b2;color:#a00;padding:3px 14px;border-radius:5px;margin-right:10px;">
+                  <img src="image4" width="18" height="18" style="vertical-align:middle;" alt="delete"> Delete</button>
+                <button onclick="changeRewardAmount(${i})" style="background:#ffe177;color:#65430a;padding:3px 14px;border-radius:5px;">
+                  <img src="image6" width="18" height="18" style="vertical-align:middle;" alt="edit"> Change cost</button>
+              </div>
+            `:''}
           </div>
+          ${!isDemo() && userRole()==="user"?`
+            <button onclick="claimReward(${i})" style="background: #6fedd1; color: white; border: none; border-radius: 8px; padding: 6px 16px; font-weight: bold;" ${pts < r.cost ? 'disabled style="opacity:0.6;cursor:not-allowed"' : ''}>-${r.cost}</button>
+          `:''}
         </div>
       `;
     });
@@ -218,9 +273,35 @@ function renderClaimed() {
   page.innerHTML = `<div class="section" style="text-align: center;"><h2 style="font-size: 2rem; color: var(--text-dark);">Claimed Rewards</h2></div>`;
   const section = document.createElement('div');
   section.className = 'section';
-  section.innerHTML = isDemo()
-    ? '<p>Демо: ваши полученные награды будут тут.</p>'
-    : '<p>Здесь будут ваши полученные награды.</p>';
+  if (isDemo()) {
+    section.innerHTML = '<p>Демо: ваши полученные награды будут тут.</p>';
+  } else {
+    const claimed = (allData.claimed||[]).filter(r => r.username === currentUser);
+    if (claimed.length === 0) {
+      section.innerHTML = '<p>No claimed rewards.</p>';
+    } else {
+      claimed.forEach((r, i) => {
+        section.innerHTML += `
+          <div style="border: 2px solid #fdd36a; border-radius: 12px; padding: 12px; margin-bottom: 12px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <strong>${r.emoji ? r.emoji + ' ' : ''}${r.name}</strong>
+                <div style="color: #666; font-size: 0.9rem;">${r.desc}</div>
+              </div>
+              ${
+                r.done
+                ? `<button class="paw-btn done" disabled title="Received"><img src="image10" width="18" height="18" style="vertical-align:middle;" alt="done"> Received</button>`
+                : userRole()==='user'
+                  ? `<button class="paw-btn" disabled title="Only Questmaster can mark"><img src="image10" width="18" height="18" style="vertical-align:middle;" alt="done"> Mark as received</button>`
+                  : `<button class="paw-btn" onclick="markRewardDone(${i})" title="Mark as received"><img src="image10" width="18" height="18" style="vertical-align:middle;" alt="done"> Mark as received</button>`
+              }
+            </div>
+            <small>Claimed: ${new Date(r.claimedAt).toLocaleString()}</small>
+          </div>
+        `;
+      });
+    }
+  }
   page.appendChild(section);
 }
 
@@ -257,14 +338,14 @@ function renderSettings() {
         <b>Quests:</b> ${getQuestCats().join(', ')}
         <form onsubmit="event.preventDefault();addQuestCat(this.cat.value);this.cat.value='';">
           <input name="cat" placeholder="Add quest category..." required style="margin:6px 0;"/>
-          <button type="submit">Add</button>
+          <button type="submit"><img src="image5" width="16" height="16" style="vertical-align:middle;"/> Add</button>
         </form>
       </div>
       <div>
         <b>Rewards:</b> ${getRewardCats().join(', ')}
         <form onsubmit="event.preventDefault();addRewardCat(this.cat.value);this.cat.value='';">
           <input name="cat" placeholder="Add reward category..." required style="margin:6px 0;"/>
-          <button type="submit">Add</button>
+          <button type="submit"><img src="image6" width="16" height="16" style="vertical-align:middle;"/> Add</button>
         </form>
       </div>
     </div>
@@ -289,27 +370,56 @@ window.resetAllData = function() {
   }
 }
 
-// --- Auth ---
-window.signOut = function() {
-  localStorage.removeItem('pawCurrentUser');
-  currentUser = "";
+// --- CRUD ---
+window.addTask = function addTask() {
+  if (userRole() !== 'admin') return;
+  const type = document.getElementById('questType').value;
+  const name = document.getElementById('taskName').value.trim();
+  let cat = document.getElementById('taskCat').value;
+  if (cat === "__custom__") {
+    cat = document.getElementById('taskCatCustom').value.trim();
+    if (cat) window.addQuestCat(cat);
+  }
+  const desc = document.getElementById('taskDesc').value.trim();
+  const pts = parseInt(document.getElementById('taskPoints').value);
+  if (!name || isNaN(pts)) return alert('Please enter valid quest data.');
+  allData.quests.push({ type, name, emoji: '', desc, pts, cat });
+  syncToFirebase();
   renderAll();
-}
-window.showRegister = function showRegister() { alert("Окно регистрации (реализуйте свой modal)"); }
-window.showLogin = function showLogin() { alert("Окно логина (реализуйте свой modal)"); }
-
-// --- Render ---
-function renderAll() {
-  renderMain();
-  renderShop();
-  renderQuests();
-  renderClaimed();
-  renderSettings();
-  updatePages();
-}
-
-window.addEventListener('DOMContentLoaded', () => {
-  if (isInitialSync && Object.keys(allData.users).length === 0 && allData.quests.length === 0 && allData.rewards.length === 0) addDemoData();
+};
+window.addReward = function addReward() {
+  if (userRole() !== 'admin') return;
+  const name = document.getElementById('rewardName').value.trim();
+  let cat = document.getElementById('rewardCat').value;
+  if (cat === "__custom__") {
+    cat = document.getElementById('rewardCatCustom').value.trim();
+    if (cat) window.addRewardCat(cat);
+  }
+  const desc = document.getElementById('rewardDesc').value.trim();
+  const cost = parseInt(document.getElementById('rewardCost').value);
+  if (!name || isNaN(cost)) return alert('Please enter valid reward data.');
+  allData.rewards.push({ name, emoji: '', desc, cost, cat });
+  syncToFirebase();
   renderAll();
-  document.getElementById('loader').style.display = 'none';
-});
+};
+window.completeTask = function completeTask(index) {
+  if (userRole() !== 'user') return;
+  const q = allData.quests[index];
+  allData.points[currentUser] = (allData.points[currentUser] || 0) + q.pts;
+  allData.completed.push({ ...q, completedAt: new Date().toISOString(), username: currentUser });
+  allData.quests.splice(index, 1);
+  syncToFirebase();
+  renderAll();
+};
+window.deleteQuest = function deleteQuest(index) {
+  if (userRole() !== 'admin') return;
+  if (confirm('Delete this quest?')) {
+    allData.quests.splice(index, 1);
+    syncToFirebase();
+    renderAll();
+  }
+};
+window.claimReward = function claimReward(index) {
+  if (userRole() !== 'user') return;
+  const r = allData.rewards[index];
+  if ((allData.points[currentUser]||0) < r.cost
