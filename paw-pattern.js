@@ -1,4 +1,4 @@
-// Цвета паттерна
+// Цвета паттерна (бирюзовый, розовый, желтый, прозрачность)
 const PAW_COLORS = [
   'rgba(111,237,209,0.19)', // бирюзовый
   'rgba(255,191,206,0.22)', // розовый
@@ -32,7 +32,6 @@ function drawPaw(ctx, x, y, size, angle, color) {
 }
 
 function pawsNotOverlap(paws, x, y, r) {
-  // r — "радиус" лапки (чтобы между лапками было пространство хотя бы 10px)
   for (let i = 0; i < paws.length; ++i) {
     let dx = x - paws[i].x;
     let dy = y - paws[i].y;
@@ -45,22 +44,19 @@ function pawsNotOverlap(paws, x, y, r) {
 function drawPawPattern() {
   const canvas = document.getElementById('paw-bg-pattern');
   if (!canvas) return;
-  // Fit to window
   canvas.width = window.innerWidth;
   canvas.height = window.innerHeight;
   const ctx = canvas.getContext('2d');
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  // Pattern settings
-  const pawCount = Math.floor(canvas.width * canvas.height / 18500); // немного меньше для плотности
+  const pawCount = Math.floor(canvas.width * canvas.height / 18500);
   const minPaw = 32, maxPaw = 62;
   let paws = [];
   let fails = 0, i = 0, maxTries = pawCount * 20;
 
-  // Не даём накладываться лапкам
   while (paws.length < pawCount && fails < maxTries) {
     const size = minPaw + Math.random() * (maxPaw - minPaw);
-    const r = size * 0.6; // "радиус" для проверки
+    const r = size * 0.6;
     const x = r + Math.random() * (canvas.width - 2*r);
     const y = r + Math.random() * (canvas.height - 2*r);
     if (pawsNotOverlap(paws, x, y, r)) {
@@ -73,7 +69,6 @@ function drawPawPattern() {
   }
   paws.forEach(paw => drawPaw(ctx, paw.x, paw.y, paw.size, paw.angle, paw.color));
 
-  // Дотсы
   for (let i = 0; i < pawCount * 1.5; ++i) {
     const r = 1 + Math.random() * 3;
     const x = Math.random() * canvas.width;
