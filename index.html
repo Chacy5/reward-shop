@@ -7,9 +7,7 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <!-- Лапковый паттерн -->
   <canvas id="paw-bg-pattern" aria-hidden="true"></canvas>
-
   <header>
     <span class="logo-wrap">
       <img src="image1" alt="Talk to my paw Logo" class="logo-svg" />
@@ -21,9 +19,7 @@
       <button id="show-user-menu" type="button">
         <img src="image2" alt="User" width="30" height="30"/>
       </button>
-      <div id="user-menu" style="display:none;">
-        <!-- генерируется через JS -->
-      </div>
+      <div id="user-menu" style="display:none;"></div>
     </span>
   </header>
   <main>
@@ -54,7 +50,7 @@
       <div>
         <h3>Pick an emoji</h3>
         <input type="text" id="emoji-input" maxlength="2" />
-        <button id="emoji-picker-confirm">Select</button>
+        <button id="emoji-picker-confirm" class="fancy-btn">Select</button>
       </div>
     </div>
   </div>
