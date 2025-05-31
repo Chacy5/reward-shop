@@ -93,8 +93,16 @@ export async function updateQuest(familyId, questId, quest) {
 }
 
 // Удалить квест
-export async function deleteQuest(familyId, questId) {
-  await deleteDoc(doc(db, "families", familyId, "quests", questId));
+export async function deleteQuest(questId) {
+  if (!confirm("Delete this quest?")) return;
+
+  // Обновление локальных данных пользователя
+  let user = getUserData();
+  user.quests = user.quests.filter(q => q.id !== questId);
+
+  // Сохранение изменений и обновление интерфейса
+  saveData();
+  renderQuests();
 }
 
 // Получить награды семьи
@@ -116,7 +124,18 @@ export async function updateReward(familyId, rewardId, reward) {
 
 // Удалить награду
 export async function deleteReward(familyId, rewardId) {
+  if (!confirm("Delete this reward?")) return;
+
+  // Удаление награды из Firebase
   await deleteDoc(doc(db, "families", familyId, "rewards", rewardId));
+
+  // Обновление локальных данных пользователя
+  let user = getUserData();
+  user.rewards = user.rewards.filter(r => r.id !== rewardId);
+
+  // Сохранение изменений и обновление интерфейса
+  saveData();
+  renderRewards();
 }
 
 // Выход

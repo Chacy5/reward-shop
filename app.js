@@ -72,43 +72,6 @@ async function saveData() {
     await updateUserData(familyId, currentUser, data[currentUser]);
   }
 }  
-  
-// ====== DEMO MODE ======
-function isDemo() { return !currentUser || currentUser === DEMO_USER; }
-function getDemoData() {
-  return {
-    profile: { username: DEMO_USER, password: "demo", role: "Performer" },
-    points: 100,
-    quests: [
-      { id: 1, type: 'daily', name: '🟢 Завершите этот квест', emoji: '🐾', category: "Goal", desc: 'Кликните "Mark done", чтобы выполнить ежедневную задачу', pts: 6, done: false, lastDone: null },
-      { id: 2, type: 'event', name: '🔵 Получите награду', emoji: '🎁', category: "Gift", desc: 'Зайдите в Reward Store, чтобы получить награду за баллы', pts: 5, done: false, lastDone: null },
-      { id: 3, type: 'weekly', name: '🟣 Откройте статистику', emoji: '📊', category: "Growth", desc: 'Посмотрите, как отслеживается прогресс', pts: 4, done: false, lastDone: null }
-    ],
-    completed: [],
-    rewards: [
-      { id: 1, name: '🏆 Мотивация и поддержка', emoji: '🐾', category: "Sweets", desc: 'Игра помогает людям с СДВГ структурировать задачи, получать награды и видеть свой прогресс!', cost: 1, bonus: "Стимулирует регулярность", quantity: 99 },
-      { id: 2, name: '🤝 Улучшение отношений', emoji: '💖', category: "Gift", desc: 'Совместные квесты и награды учат позитивному подкреплению и заботе друг о друге.', cost: 1, bonus: "Дружба и любовь", quantity: 99 },
-      { id: 3, name: '✨ Достижения', emoji: '⭐', category: "Growth", desc: 'Почувствуйте гордость за себя — каждое действие приближает к цели!', cost: 1, bonus: "Видимый рост", quantity: 99 }
-    ],
-    claimed: [],
-    lastDailyReset: 0,
-    lastWeeklyReset: 0,
-    archive: [],
-    categories: [...DEFAULT_CATEGORIES],
-    customEmojis: [],
-  };
-}
-
-// ====== Storage ======
-function loadData() {
-  let raw = localStorage.getItem('pawData');
-  if (raw) data = JSON.parse(raw);
-  else { data = {}; data[DEMO_USER] = getDemoData(); saveData(); }
-}
-function saveData() { localStorage.setItem('pawData', JSON.stringify(data)); }
-function getUserData() { return (!currentUser || !data[currentUser]) ? data[DEMO_USER] : data[currentUser]; }
-function setUser(username) { currentUser = username; localStorage.setItem('pawCurrentUser', currentUser); }
-function logout() { currentUser = ""; localStorage.removeItem('pawCurrentUser'); renderAll(); }
 
 // ====== Quest/Reward Periodic Reset ======
 function resetDailiesAndWeeklies() {
@@ -241,6 +204,7 @@ function renderHome() {
         </span>
       </div>
       <button class="demo-big-btn" onclick="showRegisterModal()">Начать играть — Регистрация</button>
+      <button class="demo-big-btn" onclick="showLoginModal()">Войти</button>
     `;
     html += `
       <div class="infograph" style="margin-top:38px;">
@@ -482,12 +446,7 @@ function saveQuest(id) {
   saveData(); closeModal(); renderQuests();
 }
 function editQuest(id) { openQuestModal(id); }
-function deleteQuest(id) {
-  if (!confirm("Delete this quest?")) return;
-  let user = getUserData();
-  user.quests = user.quests.filter(q => q.id !== id);
-  saveData(); renderQuests();
-}
+
 function completeQuest(id) {
   let user = getUserData(); let q = user.quests.find(q=>q.id===id);
   q.done = true; q.lastDone = Date.now();
@@ -496,6 +455,8 @@ function completeQuest(id) {
   if(q.type==="event") user.quests = user.quests.filter(qq=>qq.id!==id);
   saveData(); renderQuests(); updateUIUser(); renderStatsPage();
 }
+window.completeQuest = completeQuest;
+
 
 // ====== CRUD Rewards ======
 function openRewardModal(id) {
@@ -556,12 +517,7 @@ function saveReward(id) {
   saveData(); closeModal(); renderShop();
 }
 function editReward(id) { openRewardModal(id); }
-function deleteReward(id) {
-  if (!confirm("Delete this reward?")) return;
-  let user = getUserData();
-  user.rewards = user.rewards.filter(r => r.id !== id);
-  saveData(); renderShop();
-}
+
 function claimReward(id) {
   let user = getUserData(); let r = user.rewards.find(r=>r.id===id);
   if (user.points < r.cost) return alert("Not enough paws!");
