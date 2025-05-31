@@ -76,7 +76,7 @@ async function saveData() {
 // ====== Quest/Reward Periodic Reset ======
 function resetDailiesAndWeeklies() {
   let user = getUserData();
-  if (!user) return;
+  if (!user || !Array.isArray(user.quests)) return;
   let now = Date.now();
   let todayStart = new Date(); todayStart.setHours(0,0,0,0);
   if (!user.lastDailyReset || user.lastDailyReset < todayStart.getTime()) {
