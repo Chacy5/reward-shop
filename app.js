@@ -26,6 +26,13 @@ let DEFAULT_EMOJI = [
   "🎯","📚","🧹","💪","🌿","📝","🧠","🎁","🍫","☕","🛋️","🎮","🧸","❤️","🐾","🔥","⭐","🔔","🚀","🎉"
 ];
 
+// ====== Set User ======
+function setUser(username) {
+  currentUser = username;
+  localStorage.setItem('pawCurrentUser', username);
+}
+
+// ====== DEMO/DATA ======
 function isDemo() { return !currentUser || currentUser === DEMO_USER; }
 
 function getDemoData() {
@@ -224,7 +231,7 @@ function renderHome() {
       </div>
       <div style="margin:18px 0 0 0; color:#189d8a; text-align:center;">Зарегистрируйтесь, чтобы открыть весь функционал!</div>
     `;
- } else if (user && user.profile) {
+  } else if (user && user.profile) {
     html += `
       <div class="greeting">🐾 Добро пожаловать, <b>${user.profile.username}</b>!</div>
       <div class="infograph">
@@ -619,6 +626,7 @@ async function renderAll() {
   renderSettings();
 
   let menu = document.getElementById('user-menu');
+  if (!menu) return;
   menu.innerHTML = `
     <button class="user-menu-item" id="user-menu-edit-profile" type="button">Edit profile</button>
     <button class="user-menu-item" id="user-menu-change-password" type="button">Change password</button>
