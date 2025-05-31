@@ -1,4 +1,4 @@
-// === Firebase full sync + English interface + quest categories UI ===
+// === Firebase full sync + English interface + quest categories editor and all CRUD functionality ===
 import {
   registerNewUser, loginUser, logoutUser,
   getUserData as fetchUserData, updateUserData,
@@ -82,7 +82,6 @@ async function loadData() {
     return;
   }
   data[currentUser] = await fetchUserData(familyId, currentUser);
-  // Ensure categories and customEmojis exist (for old accounts)
   if (!data[currentUser].categories) data[currentUser].categories = [...DEFAULT_CATEGORIES];
   if (!data[currentUser].customEmojis) data[currentUser].customEmojis = [];
   quests = await getQuests(familyId);
@@ -279,155 +278,7 @@ function filterHandler(type, renderFunc) {
   };
 }
 
-// ====== HOME ======
-function renderHome() {
-  const user = getUserData();
-  const stats = {
-    completed: (user?.completed || []).length,
-    claimed: (user?.claimed || []).length,
-    balance: user?.points || 0
-  };
-  let html = "";
-  if (isDemo()) {
-    html += `
-      <div class="demo-hint">
-        <b>Demo mode!</b><br>
-        <span style="font-size:1.1em;">
-        This game is for two (or one) people, where you get "paws" 🐾 for completing quests,
-        which you can exchange for rewards and pleasant bonuses.<br><br>
-        The app helps structure everyday life, motivate yourself, and support each other!
-        </span>
-      </div>
-      <button class="demo-big-btn" onclick="showRegisterModal()">Start playing — Register</button>
-      <button class="demo-big-btn" onclick="showLoginModal()">Sign In</button>
-    `;
-    html += `
-      <div class="infograph" style="margin-top:38px;">
-        <div class="infocard">
-          <span class="big">${stats.balance} 🐾</span>
-          Your paw balance
-        </div>
-        <div class="infocard">
-          <span class="big">3</span>
-          Demo quests to try
-        </div>
-        <div class="infocard">
-          <span class="big">3</span>
-          Sample rewards
-        </div>
-      </div>
-      <div style="margin:18px 0 0 0; color:#189d8a; text-align:center;">Register to unlock full functionality!</div>
-    `;
-  } else if (user && user.profile) {
-    html += `
-      <div class="greeting">🐾 Welcome, <b>${user.profile.username}</b>!</div>
-      <div class="infograph">
-        <div class="infocard">
-          <span class="big">${stats.balance} 🐾</span>
-          Paw balance
-        </div>
-        <div class="infocard">
-          <span class="big">${stats.completed}</span>
-          Quests completed
-        </div>
-        <div class="infocard">
-          <span class="big">${stats.claimed}</span>
-          Rewards claimed
-        </div>
-      </div>
-    `;
-  } else {
-    html += `<div class="greeting">User data loading error.</div>`;
-  }
-  document.getElementById('page-home').innerHTML = html;
-}
-
-// ====== QUESTS ======
-function renderQuests(activeCategory = null) {
-  resetDailiesAndWeeklies();
-  const user = getUserData();
-  const isQM = user?.profile?.role === 'Questmaster';
-  let html = renderFilterBar('quests');
-  if (isDemo()) {
-    html += `<div class="demo-hint">Demo quests show how the app works.<br>Try completing them!</div>`;
-  } else if (isQM) {
-    html += `<button class="paw-action-btn" onclick="openQuestModal()">+ Add quest</button>`;
-  }
-  // Show categories table at the top
-  html += renderCategoriesTable();
-  let list = (user?.quests || []).filter(q => !q.done || q.type === "event");
-  if (activeCategory) list = list.filter(q => q.category === activeCategory);
-  if (list.length === 0) html += `<div>No active quests.</div>`;
-  list.forEach((q, i) => {
-    if (q.type !== "event" && q.done) return;
-    html += `
-    <div class="card ${q.type}">
-      <div style="display:flex;justify-content:space-between;align-items:center;">
-        <div><span style="font-size:1.5em;">${q.emoji}</span> <b>${q.name}</b></div>
-        <div><span style="font-size:1em;">${q.pts} 🐾</span></div>
-      </div>
-      <div style="margin:4px 0 0 0; font-size:0.97em; color:#35776e;">${q.desc}</div>
-      <div style="font-size:0.92em; color:#888;">${q.type}, ${renderCategoryLabel(q.category)}</div>
-      <div style="margin-top:10px;">`;
-    if (!isDemo() && isQM) {
-      html += `<button class="edit-btn" onclick="editQuest(${q.id})">✏️ Edit</button>
-               <button class="delete-btn" onclick="deleteQuest(${q.id})">🗑️ Delete</button>`;
-    } else if (!q.done) {
-      html += `<button class="paw-action-btn" onclick="completeQuest(${q.id})">Mark done</button>`;
-    }
-    html += `</div></div>`;
-  });
-  document.getElementById('page-quests').innerHTML = `<h2>Quests</h2>${html}`;
-  document.getElementById('page-quests').onclick = filterHandler('quests', renderQuests);
-}
-
-// ====== SETTINGS =======
-function renderSettings() {
-  let html = "";
-  if (isDemo()) {
-    html += `<div class="demo-hint">Settings are available after registration.</div>
-      <div>
-        <button class="fancy-btn demo-disabled" disabled>Switch theme</button>
-        <button class="fancy-btn demo-disabled" disabled>Open archive</button>
-        <button class="fancy-btn demo-disabled" disabled>Edit categories</button>
-        <button class="fancy-btn demo-disabled" disabled>Reset all data</button>
-      </div>`;
-  } else {
-    html += `
-      <div>
-        <button class="fancy-btn" id="theme-switcher">Switch theme</button>
-        <button class="fancy-btn" id="archive-open">Open archive</button>
-        <button class="fancy-btn" id="edit-categories">Edit categories</button>
-        <button class="fancy-btn" id="reset-all-data">Reset all data</button>
-      </div>
-    `;
-  }
-  document.getElementById('page-settings').innerHTML = `<h2>Settings</h2>${html}`;
-
-  if (!isDemo()) {
-    document.getElementById('theme-switcher').onclick = switchTheme;
-    document.getElementById('archive-open').onclick = () => showPage('archive');
-    document.getElementById('edit-categories').onclick = openCategoriesEditor;
-    document.getElementById('reset-all-data').onclick = resetAllData;
-  }
-}
-function switchTheme() {
-  document.body.classList.toggle('dark-theme');
-}
-function resetAllData() {
-  let user = getUserData();
-  if (!confirm("Are you sure you want to reset all your data? This cannot be undone!")) return;
-  user.quests = [];
-  user.completed = [];
-  user.rewards = [];
-  user.claimed = [];
-  user.points = 0;
-  user.archive = [];
-  saveData();
-  renderAll();
-}
-
-// ====== Modal helpers for dropdowns, etc ======
+// ====== Modal helpers for dropdowns ======
 function setupQuestModalDropdowns() {
   document.getElementById('cat-select').addEventListener('change', function() {
     if(this.value==="add-cat") {
@@ -486,18 +337,318 @@ function setupRewardModalDropdowns() {
   });
 }
 
-// ====== Make closeModal globally available for Cancel buttons ======
-window.closeModal = closeModal;
+// ====== CRUD Quests ======
+function openQuestModal(id) {
+  let user = getUserData(), isEdit = !!id;
+  let quest = isEdit && user?.quests ? user.quests.find(q=>q.id===id) : { type: 'daily', name: '', emoji: DEFAULT_EMOJI[0], category: user?.categories?.[0]?.name||"Goal", desc: '', pts: 1, done: false };
+  let types = ["daily","weekly","event"].map(t => `<option${quest.type===t?" selected":""}>${t}</option>`).join('');
+  let html = `<h3>${isEdit ? "Edit" : "Add"} Quest</h3>
+    <label>Type <select id="quest-type">${types}</select></label>
+    <label>Name <input id="quest-name" value="${quest.name||""}"></label>
+    <label>Category ${categoryDropdown(quest.category)}</label>
+    <label>Emoji ${emojiDropdown(quest.emoji)}</label>
+    <label>Description <input id="quest-desc" value="${quest.desc||""}"></label>
+    <label>Points <input id="quest-pts" type="number" min="1" value="${quest.pts||1}"></label>
+    <button class="fancy-btn" onclick="${isEdit ? `saveQuest(${quest.id})` : 'saveQuest()'}">Save</button>
+    <button class="fancy-btn" onclick="closeModal()">Cancel</button>
+    <div id="emoji-picker-anchor"></div>`;
+  openModal(html);
+  setupQuestModalDropdowns();
+}
+window.openQuestModal = openQuestModal;
 
-// ====== The rest of your code (renderShop, renderClaimedRewards, etc) remains the same ======
-// ... (see your current app.js logic for these sections)
+function saveQuest(id) {
+  let user = getUserData();
+  if (!user) return;
+  let quest = {
+    id: id || (Math.random()*1e8)|0,
+    type: document.getElementById('quest-type').value,
+    name: document.getElementById('quest-name').value,
+    category: document.getElementById('cat-select').value.replace(/^.*?\s/,''),
+    emoji: document.getElementById('emoji-select').value,
+    desc: document.getElementById('quest-desc').value,
+    pts: parseInt(document.getElementById('quest-pts').value,10),
+    done: false,
+    lastDone: null
+  };
+  if(!quest.name || !quest.emoji) return alert("Fill all fields");
+  if(id && user.quests) {
+    let idx = user.quests.findIndex(q=>q.id===id);
+    if (idx !== -1) user.quests[idx]=quest;
+  } else if (user.quests) user.quests.push(quest);
+  saveData(); closeModal(); renderQuests();
+}
+window.saveQuest = saveQuest;
+
+function editQuest(id) { openQuestModal(id); }
+window.editQuest = editQuest;
+
+function deleteQuest(id) {
+  let user = getUserData();
+  if (!user || !user.quests) return;
+  if (!confirm("Delete this quest?")) return;
+  user.quests = user.quests.filter(q => q.id !== id);
+  saveData(); renderQuests();
+}
+window.deleteQuest = deleteQuest;
+
+function completeQuest(id) {
+  let user = getUserData();
+  if (!user) return;
+  let q = user.quests ? user.quests.find(q=>q.id===id) : null;
+  if (!q) return;
+  q.done = true; q.lastDone = Date.now();
+  user.points += q.pts;
+  user.completed = user.completed || [];
+  user.completed.push({...q, completedAt: Date.now() });
+  if(q.type==="event" && user.quests) user.quests = user.quests.filter(qq=>qq.id!==id);
+  saveData(); renderQuests(); updateUIUser(); renderStatsPage();
+}
+window.completeQuest = completeQuest;
+
+// ====== CRUD Rewards ======
+function openRewardModal(id) {
+  let user = getUserData();
+  let isEdit = !!id;
+  let r = isEdit && user?.rewards ? user.rewards.find(r=>r.id===id) : { name: '', emoji: DEFAULT_EMOJI[0], category: user?.categories?.[0]?.name||"Goal", desc: '', cost: 1, bonus: '', quantity: 1 };
+  let html = `<h3>${isEdit ? "Edit" : "Add"} Reward</h3>
+    <label>Name <input id="reward-name" value="${r.name||""}"></label>
+    <label>Category ${categoryDropdown(r.category)}</label>
+    <label>Emoji ${emojiDropdown(r.emoji)}</label>
+    <label>Description <input id="reward-desc" value="${r.desc||""}"></label>
+    <label>Cost <input id="reward-cost" type="number" min="1" value="${r.cost||1}"></label>
+    <label>Bonus <input id="reward-bonus" value="${r.bonus||""}"></label>
+    <label>Quantity <input id="reward-quantity" type="number" min="0" value="${r.quantity??1}"></label>
+    <button class="fancy-btn" onclick="${isEdit ? `saveReward(${r.id})` : 'saveReward()'}">Save</button>
+    <button class="fancy-btn" onclick="closeModal()">Cancel</button>`;
+  openModal(html);
+  setupRewardModalDropdowns();
+}
+window.openRewardModal = openRewardModal;
+
+function saveReward(id) {
+  const user = getUserData();
+  if (!user) return;
+  let reward = {
+    id: id || (Math.random()*1e8)|0,
+    name: document.getElementById('reward-name').value,
+    category: document.getElementById('cat-select').value.replace(/^.*?\s/,''),
+    emoji: document.getElementById('emoji-select').value,
+    desc: document.getElementById('reward-desc').value,
+    cost: parseInt(document.getElementById('reward-cost').value,10),
+    bonus: document.getElementById('reward-bonus').value,
+    quantity: parseInt(document.getElementById('reward-quantity').value,10)
+  };
+  if(!reward.name || !reward.emoji) return alert("Fill all fields");
+  if(id && user.rewards) {
+    let idx = user.rewards.findIndex(r=>r.id===id);
+    if (idx !== -1) user.rewards[idx] = reward;
+  } else if (user.rewards) user.rewards.push(reward);
+  saveData(); closeModal(); renderShop();
+}
+window.saveReward = saveReward;
+
+function editReward(id) { openRewardModal(id); }
+window.editReward = editReward;
+
+function deleteReward(id) {
+  let user = getUserData();
+  if (!user || !user.rewards) return;
+  if (!confirm("Delete this reward?")) return;
+  user.rewards = user.rewards.filter(r => r.id !== id);
+  saveData(); renderShop();
+}
+window.deleteReward = deleteReward;
+
+function claimReward(id) {
+  let user = getUserData();
+  if (!user) return;
+  let r = user.rewards ? user.rewards.find(r=>r.id===id) : null;
+  if (!r) return;
+  if (user.points < r.cost) return alert("Not enough paws!");
+  if (r.quantity !== undefined && r.quantity <= 0) return alert("Out of stock!");
+  user.points -= r.cost;
+  r.quantity = (r.quantity ?? Infinity) - 1;
+  user.claimed = user.claimed || [];
+  user.claimed.push({
+    id: (Math.random()*1e8)|0,
+    name: r.name, emoji: r.emoji, category: r.category, desc: r.desc,
+    cost: r.cost, bonus: r.bonus, claimedAt: Date.now(), received: false
+  });
+  saveData(); renderShop(); updateUIUser(); renderStatsPage();
+}
+window.claimReward = claimReward;
+
+// ====== CLAIMED REWARD BUTTON ======
+function markRewardReceived(id) {
+  const user = getUserData();
+  if (!user || !user.claimed) return;
+  let reward = user.claimed.find(r => r.id === id);
+  if (reward) {
+    reward.received = true;
+    saveData();
+    renderClaimedRewards();
+  }
+}
+window.markRewardReceived = markRewardReceived;
+
+// ====== Роли ======
+function renderUserMenuRoleSwitch() {
+  if (isDemo()) return '';
+  let user = getUserData();
+  let role = user?.profile?.role;
+  if (!role) return '';
+  let other = role === "Questmaster" ? "Performer" : "Questmaster";
+  return `<button class="user-menu-item" id="switch-role" type="button">${role} (Switch to ${other})</button>`;
+}
+
+// ====== Статистика ======
+function renderStatsPage() {
+  let user = getUserData();
+  if (!user) return;
+  let catStats = {};
+  (user.completed || []).forEach(c => { catStats[c.category]=catStats[c.category]||0; catStats[c.category]++; });
+  (user.claimed || []).forEach(c => { catStats[c.category]=catStats[c.category]||0; });
+  let html = `<h2>Statistics</h2>
+    <div><b>Completed quests by category:</b><ul>${
+      Object.entries(catStats).map(([cat,qty])=>`<li>${cat}: ${qty}</li>`).join('')
+    }</ul></div>
+    <div><b>Total rewards claimed:</b> ${(user.claimed||[]).length}</div>
+    <button class="fancy-btn" onclick="showPage('home')">Back</button>`;
+  document.getElementById('page-statistics').innerHTML = html;
+}
+
+// ====== UI & NAV ======
+function updateUIUser() {
+  const user = getUserData();
+  document.getElementById('paw-balance-val').textContent = user && user.points !== undefined ? user.points : 0;
+  if (isDemo()) {
+    document.getElementById('user-menu').style.display = "none";
+    document.getElementById('show-user-menu').disabled = true;
+  } else {
+    document.getElementById('show-user-menu').disabled = false;
+  }
+}
+
+async function renderAll() {
+  await loadData();
+  resetDailiesAndWeeklies();
+  updateUIUser();
+  renderHome();
+  renderQuests();
+  renderShop();
+  renderClaimedRewards();
+  renderStatsPage();
+  renderSettings();
+
+  let menu = document.getElementById('user-menu');
+  if (!menu) return;
+  menu.innerHTML = `
+    <button class="user-menu-item" id="user-menu-edit-profile" type="button">Edit profile</button>
+    <button class="user-menu-item" id="user-menu-change-password" type="button">Change password</button>
+    <button class="user-menu-item" id="user-menu-statistics" type="button">Statistics</button>
+    ${renderUserMenuRoleSwitch()}
+    <button class="user-menu-item" id="user-menu-logout" type="button">Logout</button>
+  `;
+  document.getElementById('user-menu-edit-profile').onclick = function(e) {
+    e.stopPropagation();
+    let user = getUserData();
+    openModal(`<h3>Edit Profile</h3>
+      <label>Username <input type="text" value="${user?.profile?.username||''}" disabled></label>
+      <button class="fancy-btn" onclick="closeModal()">Close</button>
+    `); closeUserMenu();
+  };
+  document.getElementById('user-menu-change-password').onclick = function(e) {
+    e.stopPropagation();
+    openModal(`<h3>Change Password</h3>
+      <label>New Password <input type="password"></label>
+      <button class="fancy-btn" onclick="alert('Change not implemented')">Change</button>
+    `); closeUserMenu();
+  };
+  document.getElementById('user-menu-statistics').onclick = function(e) {
+    e.stopPropagation();
+    showPage('statistics'); closeUserMenu();
+  };
+  let switchRoleBtn = document.getElementById('switch-role');
+  if (switchRoleBtn) switchRoleBtn.onclick = function(e) {
+    e.stopPropagation();
+    let user = getUserData();
+    if (user && user.profile) {
+      user.profile.role = user.profile.role === "Questmaster" ? "Performer" : "Questmaster";
+      saveData(); renderAll(); closeUserMenu();
+    }
+  };
+  document.getElementById('user-menu-logout').onclick = function(e) {
+    e.stopPropagation();
+    openModal(`<h3>Logout</h3>
+      <p>Are you sure you want to logout?</p>
+      <button class="fancy-btn" onclick="window.logout()">Yes, logout</button>
+      <button class="fancy-btn" onclick="closeModal()">Cancel</button>
+    `); closeUserMenu();
+  };
+}
+
+// ====== NAV & MODALS ======
+const navLinks = document.querySelectorAll('nav.bottom a');
+const pages = document.querySelectorAll('.page');
+const pawBalance = document.getElementById('paw-balance');
+function showPage(pageId) {
+  pages.forEach(p => p.classList.remove('active'));
+  navLinks.forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + pageId).classList.add('active');
+  navLinks.forEach(n => {
+    if (n.getAttribute('data-page') === pageId) n.classList.add('active');
+  });
+  pawBalance.style.display = (pageId === "settings") ? "none" : "flex";
+  closeUserMenu();
+  closeModal();
+  closeEmojiPicker();
+}
+navLinks.forEach(link => {
+  link.addEventListener('click', e => {
+    e.preventDefault();
+    const page = link.getAttribute('data-page');
+    showPage(page);
+  });
+});
+const showUserMenuBtn = document.getElementById('show-user-menu');
+const userMenu = document.getElementById('user-menu');
+function openUserMenu() { userMenu.style.display = "block"; }
+function closeUserMenu() { userMenu.style.display = "none"; }
+showUserMenuBtn.addEventListener('click', e => {
+  e.stopPropagation();
+  if (userMenu.style.display === "block") closeUserMenu();
+  else openUserMenu();
+});
+document.body.addEventListener('click', e => {
+  if (userMenu.style.display === "block") closeUserMenu();
+});
+userMenu.addEventListener('click', e => e.stopPropagation());
+const modalBg = document.getElementById('modal-bg');
+function openModal(contentHtml = "") {
+  document.getElementById('modal-content').innerHTML = contentHtml;
+  modalBg.style.display = "flex";
+}
+function closeModal() { modalBg.style.display = "none"; }
+window.closeModal = closeModal;
+modalBg.addEventListener('click', e => { if (e.target === modalBg) closeModal(); });
+const emojiPickerModal = document.getElementById('emoji-picker-modal');
+function openEmojiPicker() {
+  emojiPickerModal.style.display = "flex";
+  document.getElementById('emoji-input').focus();
+}
+function closeEmojiPicker() { emojiPickerModal.style.display = "none"; }
+emojiPickerModal.addEventListener('click', e => { if (e.target === emojiPickerModal) closeEmojiPicker(); });
+document.addEventListener('keydown', e => {
+  if (e.key === "Escape") {
+    closeModal(); closeUserMenu(); closeEmojiPicker();
+  }
+});
 
 // ====== On Load ======
 window.onload = async function () {
   await renderAll();
 };
-window.openQuestModal = openQuestModal;
-window.openRewardModal = openRewardModal;
 window.logout = logout;
 function logout() {
   logoutUser();
