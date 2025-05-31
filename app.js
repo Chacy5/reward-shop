@@ -570,7 +570,8 @@ function renderStatsPage() {
 
 // ====== UI & NAV ======
 function updateUIUser() {
-  document.getElementById('paw-balance-val').textContent = getUserData().points ?? 0;
+  const user = getUserData();
+  document.getElementById('paw-balance-val').textContent = user && user.points !== undefined ? user.points : 0;
   if (isDemo()) {
     document.getElementById('user-menu').style.display = "none";
     document.getElementById('show-user-menu').disabled = true;
@@ -578,8 +579,11 @@ function updateUIUser() {
     document.getElementById('show-user-menu').disabled = false;
   }
 }
-function renderAll() {
-  loadData(); resetDailiesAndWeeklies(); updateUIUser();
+
+async function renderAll() {
+  await loadData();
+  resetDailiesAndWeeklies();
+  updateUIUser();
   renderHome();
   renderQuests();
   renderShop();
@@ -629,6 +633,9 @@ function renderAll() {
     `); closeUserMenu();
   };
 }
+window.onload = async function () {
+  await renderAll();
+};
 
 // ====== NAV & MODALS ======
 const navLinks = document.querySelectorAll('nav.bottom a');
