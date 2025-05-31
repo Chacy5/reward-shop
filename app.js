@@ -1,4 +1,4 @@
-// === Firebase full sync + English interface + quest categories editor and all CRUD functionality ===
+// === Firebase full sync + English interface ===
 import {
   registerNewUser, loginUser, logoutUser,
   getUserData as fetchUserData, updateUserData,
@@ -21,7 +21,7 @@ function cleanObject(obj) {
 // ====== Globals and Data ======
 let familyId = localStorage.getItem('pawFamilyId') || "";
 let currentUser = localStorage.getItem('pawCurrentUser') || "";
-let data = {};
+let userData = null;
 let quests = [];
 let rewards = [];
 let DEMO_USER = "demo";
@@ -38,18 +38,14 @@ let DEFAULT_EMOJI = [
   "🎯","📚","🧹","💪","🌿","📝","🧠","🎁","🍫","☕","🛋️","🎮","🧸","❤️","🐾","🔥","⭐","🔔","🚀","🎉"
 ];
 
-// ====== Set User ======
-function setUser(username) {
-  currentUser = username;
-  localStorage.setItem('pawCurrentUser', username);
+// ====== DEMO MODE ======
+function isDemo() {
+  return !currentUser || currentUser === DEMO_USER;
 }
-
-// ====== DEMO/DATA ======
-function isDemo() { return !currentUser || currentUser === DEMO_USER; }
-
 function getDemoData() {
   return {
-    profile: { username: DEMO_USER, password: "demo", role: "Performer" },
+    username: DEMO_USER,
+    role: "Performer",
     points: 100,
     quests: [
       { id: 1, type: 'daily', name: '🟢 Complete this quest', emoji: '🐾', category: "Goal", desc: 'Click "Mark done" to complete this daily quest', pts: 6, done: false, lastDone: null },
@@ -71,125 +67,48 @@ function getDemoData() {
   };
 }
 
-function getUserData() {
-  if (isDemo()) return data[DEMO_USER];
-  return data[currentUser];
-}
-
-async function loadData() {
+// ====== LOAD/SAVE DATA ======
+async function loadAllData() {
   if (isDemo()) {
-    data[DEMO_USER] = getDemoData();
+    userData = getDemoData();
+    quests = userData.quests;
+    rewards = userData.rewards;
     return;
   }
-  data[currentUser] = await fetchUserData(familyId, currentUser);
-  if (!data[currentUser].categories) data[currentUser].categories = [...DEFAULT_CATEGORIES];
-  if (!data[currentUser].customEmojis) data[currentUser].customEmojis = [];
+  if (!familyId || !currentUser) return;
+  userData = await fetchUserData(familyId, currentUser);
   quests = await getQuests(familyId);
   rewards = await getRewards(familyId);
 }
-
-async function saveData() {
-  if (!isDemo() && currentUser && data[currentUser]) {
-    await updateUserData(familyId, currentUser, cleanObject(data[currentUser]));
+async function saveUserData() {
+  if (!isDemo() && currentUser && userData) {
+    await updateUserData(familyId, currentUser, cleanObject(userData));
   }
 }
 
-// ====== Quest/Reward Periodic Reset ======
+// ====== Periodic Quest Reset ======
 function resetDailiesAndWeeklies() {
-  let user = getUserData();
-  if (!user || !Array.isArray(user.quests)) return;
+  if (!userData || !Array.isArray(userData.quests)) return;
   let todayStart = new Date(); todayStart.setHours(0,0,0,0);
-  if (!user.lastDailyReset || user.lastDailyReset < todayStart.getTime()) {
-    user.quests.forEach(q => { if(q.type==='daily') q.done = false; });
-    user.lastDailyReset = todayStart.getTime();
+  if (!userData.lastDailyReset || userData.lastDailyReset < todayStart.getTime()) {
+    userData.quests.forEach(q => { if(q.type==='daily') q.done = false; });
+    userData.lastDailyReset = todayStart.getTime();
   }
-  let monday = new Date(); let day = monday.getDay()||7;
+  let monday = new Date();
+  let day = monday.getDay()||7;
   monday.setHours(0,0,0,0); monday.setDate(monday.getDate() - day + 1);
-  if (!user.lastWeeklyReset || user.lastWeeklyReset < monday.getTime()) {
-    user.quests.forEach(q => { if(q.type==='weekly') q.done = false; });
-    user.lastWeeklyReset = monday.getTime();
+  if (!userData.lastWeeklyReset || userData.lastWeeklyReset < monday.getTime()) {
+    userData.quests.forEach(q => { if(q.type==='weekly') q.done = false; });
+    userData.lastWeeklyReset = monday.getTime();
   }
-  saveData();
+  saveUserData();
 }
-
-// ====== Categories Table for Quests Page ======
-function renderCategoriesTable() {
-  let user = getUserData();
-  if (!user || !user.categories || user.categories.length === 0) return "";
-  return `
-    <div style="margin:10px 0 18px 0; font-size:1.08em;">
-      <b>Categories:</b>
-      <span style="display:inline-block; vertical-align:middle;">
-        ${user.categories.map(
-          c => `<span style="margin-right:12px;display:inline-block;">
-                  <span style="font-size:1.36em;">${c.emoji}</span> <span>${c.name}</span>
-                </span>`
-        ).join('')}
-        <button class="fancy-btn" style="padding:2px 10px;font-size:1em;" onclick="openCategoriesEditor()">✏️ Edit Categories</button>
-      </span>
-    </div>
-  `;
-}
-function renderCategoryLabel(catName) {
-  let user = getUserData();
-  if (!user || !user.categories) return catName || "";
-  let cat = user.categories.find(c => c.name === catName);
-  if (cat) return `<span style="font-size:1.2em;">${cat.emoji}</span> ${cat.name}`;
-  return catName || "";
-}
-
-// ====== Categories Editor ======
-function openCategoriesEditor() {
-  let user = getUserData();
-  let categories = user.categories || [];
-  let html = `<h3>Edit Categories</h3>
-    <ul style="list-style:none;padding:0;">${
-      categories.map((c,i)=>`
-        <li style="margin-bottom:8px;">
-          <span style="font-size:1.4em;">${c.emoji}</span>
-          <input type="text" value="${c.name}" id="cat-name-${i}" style="width:70px;">
-          <button onclick="removeCategory(${i})" style="margin-left:6px;">🗑️</button>
-        </li>
-      `).join('')
-    }</ul>
-    <button class="fancy-btn" onclick="addCategoryPrompt()">Add Category</button>
-    <button class="fancy-btn" onclick="saveCategories()">Save</button>
-    <button class="fancy-btn" onclick="closeModal()">Cancel</button>
-  `;
-  openModal(html);
-}
-window.openCategoriesEditor = openCategoriesEditor;
-window.addCategoryPrompt = function addCategoryPrompt() {
-  let emoji = prompt("Enter emoji:");
-  let name = prompt("Category name:");
-  if (emoji && name) {
-    let user = getUserData();
-    user.categories.push({emoji, name});
-    openCategoriesEditor();
-  }
-};
-window.removeCategory = function removeCategory(idx) {
-  let user = getUserData();
-  user.categories.splice(idx, 1);
-  openCategoriesEditor();
-};
-window.saveCategories = function saveCategories() {
-  let user = getUserData();
-  let categories = user.categories;
-  for (let i = 0; i < categories.length; ++i) {
-    let val = document.getElementById(`cat-name-${i}`).value.trim();
-    categories[i].name = val;
-  }
-  saveData();
-  closeModal();
-  renderAll();
-};
 
 // ====== Auth ======
-function showLoginModal() {
+window.showLoginModal = function showLoginModal() {
   openModal(`
     <h3>Sign In</h3>
-    <label>Username <input id="login-username" type="text" autocomplete="username"></label>
+    <label>Email <input id="login-email" type="email" autocomplete="username"></label>
     <label>Password <input id="login-password" type="password" autocomplete="current-password"></label>
     <button class="fancy-btn" onclick="doLogin()">Sign In</button>
     <div style="margin-top:8px;font-size:0.97em;">
@@ -197,24 +116,28 @@ function showLoginModal() {
     </div>
     <div id="login-error" style="color:#c00;font-size:0.97em;"></div>
   `);
-  document.getElementById('login-username').focus();
-}
-window.showLoginModal = showLoginModal;
-window.doLogin = function doLogin() {
-  let username = document.getElementById('login-username').value.trim();
-  let password = document.getElementById('login-password').value.trim();
-  if (!username || !password) {
-    document.getElementById('login-error').textContent = "Enter both fields"; return;
-  }
-  if (!data[username] || !(data[username].profile && data[username].profile.password === password)) {
-    document.getElementById('login-error').textContent = "Wrong username or password"; return;
-  }
-  setUser(username); closeModal(); renderAll();
+  document.getElementById('login-email').focus();
 };
-function showRegisterModal() {
+window.doLogin = async function doLogin() {
+  const email = document.getElementById("login-email").value.trim();
+  const password = document.getElementById("login-password").value.trim();
+  try {
+    const { familyId: fId, user } = await loginUser({ email, password });
+    if (!fId) throw new Error("Family not found!");
+    familyId = fId;
+    currentUser = user.uid;
+    await loadAllData();
+    closeModal();
+    renderAll();
+  } catch (e) {
+    document.getElementById("login-error").textContent = e.message;
+  }
+};
+window.showRegisterModal = function showRegisterModal() {
   openModal(`
     <h3>Register</h3>
-    <label>Username <input id="register-username" type="text" autocomplete="username"></label>
+    <label>Email <input id="register-email" type="email"></label>
+    <label>Username <input id="register-username" type="text"></label>
     <label>Password <input id="register-password" type="password" autocomplete="new-password"></label>
     <button class="fancy-btn" onclick="doRegister()">Register</button>
     <div style="margin-top:8px;font-size:0.97em;">
@@ -222,44 +145,48 @@ function showRegisterModal() {
     </div>
     <div id="register-error" style="color:#c00;font-size:0.97em;"></div>
   `);
-  document.getElementById('register-username').focus();
-}
-window.showRegisterModal = showRegisterModal;
-window.doRegister = function doRegister() {
-  let username = document.getElementById('register-username').value.trim();
-  let password = document.getElementById('register-password').value.trim();
-  if (!username || !password) {
-    document.getElementById('register-error').textContent = "Enter both fields"; return;
+  document.getElementById('register-email').focus();
+};
+window.doRegister = async function doRegister() {
+  const username = document.getElementById("register-username").value.trim();
+  const email = document.getElementById("register-email").value.trim();
+  const password = document.getElementById("register-password").value.trim();
+  try {
+    const { familyId: fId, user } = await registerNewUser({ username, email, password });
+    familyId = fId;
+    currentUser = user.uid;
+    await loadAllData();
+    closeModal();
+    renderAll();
+  } catch (e) {
+    document.getElementById("register-error").textContent = e.message;
   }
-  if (data[username]) {
-    document.getElementById('register-error').textContent = "User already exists"; return;
-  }
-  data[username] = {
-    profile: { username, password, role: "Performer" },
-    points: 0, quests: [], completed: [], rewards: [], claimed: [],
-    lastDailyReset: 0, lastWeeklyReset: 0, archive: [],
-    categories: [...DEFAULT_CATEGORIES], customEmojis: []
-  };
-  saveData(); setUser(username); closeModal(); renderAll();
+};
+window.logout = async function logout() {
+  await logoutUser();
+  familyId = "";
+  currentUser = "";
+  userData = null;
+  quests = [];
+  rewards = [];
+  renderAll();
 };
 
 // ====== Emoji/Category Dropdowns ======
 function emojiDropdown(selected) {
-  let user = getUserData();
-  let emojis = [...DEFAULT_EMOJI, ...((user && user.customEmojis) || [])];
+  let emojis = [...DEFAULT_EMOJI, ...(userData && userData.customEmojis ? userData.customEmojis : [])];
   return `<select id="emoji-select">${emojis.map(e=>`<option${selected===e?' selected':''}>${e}</option>`).join("")}
     <option value="add-custom">➕ Add custom</option></select>`;
 }
 function categoryDropdown(selected) {
-  let cats = (getUserData() && getUserData().categories) || [];
+  let cats = [...DEFAULT_CATEGORIES, ...(userData && userData.categories ? userData.categories : [])];
   return `<select id="cat-select">${cats.map(c=>`<option${selected===c.name?' selected':''}>${c.emoji} ${c.name}</option>`).join("")}
     <option value="add-cat">➕ Add category</option></select>`;
 }
 
 // ====== Filtering ======
 function renderFilterBar(type) {
-  const user = getUserData();
-  const categories = (user && user.categories ? user.categories : []).map(c => c.name);
+  const categories = (userData && userData.categories ? userData.categories : []).map(c => c.name);
   let html = `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
     <button class="filter-btn" data-filter="all">All</button>`;
   categories.forEach(cat => {
@@ -268,7 +195,6 @@ function renderFilterBar(type) {
   html += `</div>`;
   return html;
 }
-
 function filterHandler(type, renderFunc) {
   return function(e) {
     if (e.target.classList.contains('filter-btn')) {
@@ -278,69 +204,108 @@ function filterHandler(type, renderFunc) {
   };
 }
 
-// ====== Modal helpers for dropdowns ======
-function setupQuestModalDropdowns() {
-  document.getElementById('cat-select').addEventListener('change', function() {
-    if(this.value==="add-cat") {
-      let emoji = prompt("Enter emoji for new category:");
-      let name = prompt("Category name:");
-      if(emoji && name) {
-        let user = getUserData();
-        if (user && user.categories) {
-          user.categories.push({emoji, name});
-          saveData();
-          openQuestModal();
-        }
-      }
-    }
-  });
-  document.getElementById('emoji-select').addEventListener('change', function() {
-    if(this.value==="add-custom") {
-      let emoji = prompt("Enter custom emoji:");
-      if(emoji) {
-        let user = getUserData();
-        if (user) {
-          user.customEmojis = user.customEmojis || [];
-          user.customEmojis.push(emoji);
-          saveData();
-          openQuestModal();
-        }
-      }
-    }
-  });
-}
-function setupRewardModalDropdowns() {
-  document.getElementById('cat-select').addEventListener('change', function() {
-    if(this.value==="add-cat") {
-      let emoji = prompt("Enter emoji for new category:");
-      let name = prompt("Category name:");
-      if(emoji && name) {
-        let user = getUserData();
-        if (user && user.categories) {
-          user.categories.push({emoji, name});
-          saveData(); openRewardModal();
-        }
-      }
-    }
-  });
-  document.getElementById('emoji-select').addEventListener('change', function() {
-    if(this.value==="add-custom") {
-      let emoji = prompt("Enter custom emoji:");
-      if(emoji) {
-        let user = getUserData();
-        if (user) {
-          user.customEmojis = user.customEmojis || [];
-          user.customEmojis.push(emoji); saveData(); openRewardModal();
-        }
-      }
-    }
-  });
+// ====== HOME ======
+function renderHome() {
+  const stats = {
+    completed: (userData?.completed || []).length,
+    claimed: (userData?.claimed || []).length,
+    balance: userData?.points || 0
+  };
+  let html = "";
+  if (isDemo()) {
+    html += `
+      <div class="demo-hint">
+        <b>Demo mode!</b><br>
+        <span style="font-size:1.1em;">
+        This game is for two (or one) people, where you get "paws" 🐾 for completing quests,
+        which you can exchange for rewards and pleasant bonuses.<br><br>
+        The app helps structure everyday life, motivate yourself, and support each other!
+        </span>
+      </div>
+      <button class="demo-big-btn" onclick="showRegisterModal()">Start playing — Register</button>
+      <button class="demo-big-btn" onclick="showLoginModal()">Sign In</button>
+    `;
+    html += `
+      <div class="infograph" style="margin-top:38px;">
+        <div class="infocard">
+          <span class="big">${stats.balance} 🐾</span>
+          Your paw balance
+        </div>
+        <div class="infocard">
+          <span class="big">3</span>
+          Demo quests to try
+        </div>
+        <div class="infocard">
+          <span class="big">3</span>
+          Sample rewards
+        </div>
+      </div>
+      <div style="margin:18px 0 0 0; color:#189d8a; text-align:center;">Register to unlock full functionality!</div>
+    `;
+  } else if (userData && userData.username) {
+    html += `
+      <div class="greeting">🐾 Welcome, <b>${userData.username}</b>!</div>
+      <div class="infograph">
+        <div class="infocard">
+          <span class="big">${stats.balance} 🐾</span>
+          Paw balance
+        </div>
+        <div class="infocard">
+          <span class="big">${stats.completed}</span>
+          Quests completed
+        </div>
+        <div class="infocard">
+          <span class="big">${stats.claimed}</span>
+          Rewards claimed
+        </div>
+      </div>
+    `;
+  } else {
+    html += `<div class="greeting">User data loading error.</div>`;
+  }
+  document.getElementById('page-home').innerHTML = html;
 }
 
-// ====== CRUD Quests ======
-function openQuestModal(id) {
-  let user = getUserData(), isEdit = !!id;
-  let quest = isEdit && user?.quests ? user.quests.find(q=>q.id===id) : { type: 'daily', name: '', emoji: DEFAULT_EMOJI[0], category: user?.categories?.[0]?.name||"Goal", desc: '', pts: 1, done: false };
+// ====== QUESTS ======
+function renderQuests(activeCategory = null) {
+  resetDailiesAndWeeklies();
+  const isQM = userData?.role === 'Questmaster';
+  let html = renderFilterBar('quests');
+  if (isDemo()) {
+    html += `<div class="demo-hint">Demo quests show how the app works.<br>Try completing them!</div>`;
+  } else if (isQM) {
+    html += `<button class="paw-action-btn" onclick="openQuestModal()">+ Add quest</button>`;
+  }
+  let list = (isDemo() ? userData.quests : quests).filter(q => !q.done || q.type === "event");
+  if (activeCategory) list = list.filter(q => q.category === activeCategory);
+  if (list.length === 0) html += `<div>No active quests.</div>`;
+  list.forEach((q, i) => {
+    if (q.type !== "event" && q.done) return;
+    html += `
+    <div class="card ${q.type}">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div><span style="font-size:1.5em;">${q.emoji}</span> <b>${q.name}</b></div>
+        <div><span style="font-size:1em;">${q.pts} 🐾</span></div>
+      </div>
+      <div style="margin:4px 0 0 0; font-size:0.97em; color:#35776e;">${q.desc}</div>
+      <div style="font-size:0.92em; color:#888;">${q.type}, ${q.category}</div>
+      <div style="margin-top:10px;">`;
+    if (!isDemo() && isQM) {
+      html += `<button class="edit-btn" onclick="editQuest('${q.id}')">✏️ Edit</button>
+               <button class="delete-btn" onclick="deleteQuestAction('${q.id}')">🗑️ Delete</button>`;
+    } else if (!q.done) {
+      html += `<button class="paw-action-btn" onclick="completeQuest('${q.id}')">Mark done</button>`;
+    }
+    html += `</div></div>`;
+  });
+  document.getElementById('page-quests').innerHTML = `<h2>Quests</h2>${html}`;
+  document.getElementById('page-quests').onclick = filterHandler('quests', renderQuests);
+}
+window.openQuestModal = function openQuestModal(id) {
+  let isEdit = !!id;
+  let quest = isEdit
+    ? (isDemo() ? userData.quests.find(q => q.id === id) : quests.find(q => q.id === id))
+    : { type: 'daily', name: '', emoji: DEFAULT_EMOJI[0], category: userData?.categories?.[0]?.name||"Goal", desc: '', pts: 1, done: false };
   let types = ["daily","weekly","event"].map(t => `<option${quest.type===t?" selected":""}>${t}</option>`).join('');
   let html = `<h3>${isEdit ? "Edit" : "Add"} Quest</h3>
     <label>Type <select id="quest-type">${types}</select></label>
@@ -349,19 +314,14 @@ function openQuestModal(id) {
     <label>Emoji ${emojiDropdown(quest.emoji)}</label>
     <label>Description <input id="quest-desc" value="${quest.desc||""}"></label>
     <label>Points <input id="quest-pts" type="number" min="1" value="${quest.pts||1}"></label>
-    <button class="fancy-btn" onclick="${isEdit ? `saveQuest(${quest.id})` : 'saveQuest()'}">Save</button>
+    <button class="fancy-btn" onclick="${isEdit ? `saveQuest('${quest.id}')` : 'saveQuest()'}">Save</button>
     <button class="fancy-btn" onclick="closeModal()">Cancel</button>
     <div id="emoji-picker-anchor"></div>`;
   openModal(html);
   setupQuestModalDropdowns();
-}
-window.openQuestModal = openQuestModal;
-
-function saveQuest(id) {
-  let user = getUserData();
-  if (!user) return;
+};
+window.saveQuest = async function saveQuest(id) {
   let quest = {
-    id: id || (Math.random()*1e8)|0,
     type: document.getElementById('quest-type').value,
     name: document.getElementById('quest-name').value,
     category: document.getElementById('cat-select').value.replace(/^.*?\s/,''),
@@ -371,46 +331,102 @@ function saveQuest(id) {
     done: false,
     lastDone: null
   };
-  if(!quest.name || !quest.emoji) return alert("Fill all fields");
-  if(id && user.quests) {
-    let idx = user.quests.findIndex(q=>q.id===id);
-    if (idx !== -1) user.quests[idx]=quest;
-  } else if (user.quests) user.quests.push(quest);
-  saveData(); closeModal(); renderQuests();
-}
-window.saveQuest = saveQuest;
-
-function editQuest(id) { openQuestModal(id); }
-window.editQuest = editQuest;
-
-function deleteQuest(id) {
-  let user = getUserData();
-  if (!user || !user.quests) return;
-  if (!confirm("Delete this quest?")) return;
-  user.quests = user.quests.filter(q => q.id !== id);
-  saveData(); renderQuests();
-}
-window.deleteQuest = deleteQuest;
-
-function completeQuest(id) {
-  let user = getUserData();
-  if (!user) return;
-  let q = user.quests ? user.quests.find(q=>q.id===id) : null;
-  if (!q) return;
+  if (!quest.name || !quest.emoji) return alert("Fill all fields");
+  if (isDemo()) {
+    if (id) {
+      let idx = userData.quests.findIndex(q=>q.id===id);
+      if (idx !== -1) userData.quests[idx] = {...quest, id};
+    } else {
+      quest.id = (Math.random()*1e8)|0;
+      userData.quests.push(quest);
+    }
+    closeModal(); renderQuests();
+    return;
+  }
+  if (id) {
+    await updateQuest(familyId, id, quest);
+  } else {
+    await addQuest(familyId, quest);
+  }
+  await loadAllData();
+  closeModal();
+  renderAll();
+};
+window.editQuest = function editQuest(id) { openQuestModal(id); };
+window.deleteQuestAction = async function deleteQuestAction(id) {
+  if (isDemo()) {
+    userData.quests = userData.quests.filter(q => q.id !== id);
+    renderQuests();
+    return;
+  }
+  await deleteQuest(familyId, id);
+  await loadAllData();
+  renderAll();
+};
+window.completeQuest = async function completeQuest(id) {
+  if (isDemo()) {
+    let q = userData.quests.find(q => q.id === id);
+    if (!q || q.done) return;
+    q.done = true; q.lastDone = Date.now();
+    userData.points += q.pts;
+    userData.completed.push({...q, completedAt: Date.now()});
+    if(q.type==="event") userData.quests = userData.quests.filter(qq=>qq.id!==id);
+    renderQuests(); updateUIUser(); renderStatsPage();
+    return;
+  }
+  let q = quests.find(q => q.id === id);
+  if (!q || q.done) return;
   q.done = true; q.lastDone = Date.now();
-  user.points += q.pts;
-  user.completed = user.completed || [];
-  user.completed.push({...q, completedAt: Date.now() });
-  if(q.type==="event" && user.quests) user.quests = user.quests.filter(qq=>qq.id!==id);
-  saveData(); renderQuests(); updateUIUser(); renderStatsPage();
-}
-window.completeQuest = completeQuest;
+  userData.points = (userData.points||0) + (q.pts||1);
+  userData.completed = userData.completed || [];
+  userData.completed.push({...q, completedAt: Date.now()});
+  await updateQuest(familyId, id, q);
+  await saveUserData();
+  await loadAllData();
+  renderAll();
+};
 
 // ====== CRUD Rewards ======
-function openRewardModal(id) {
-  let user = getUserData();
+function renderShop(activeCategory = null) {
+  const isQM = userData?.role === 'Questmaster';
+  let html = renderFilterBar('rewards');
+  if (isDemo()) {
+    html += `<div class="demo-hint">Rewards in the game are pleasant or useful bonuses you can "buy" with paws.<br>
+      Here are some reasons why this can help:</div>`;
+  } else if (isQM) {
+    html += `<button class="paw-action-btn" onclick="openRewardModal()">+ Add reward</button>`;
+  }
+  let list = isDemo() ? userData.rewards : rewards;
+  if (activeCategory) list = list.filter(r => r.category === activeCategory);
+  if (list.length === 0) html += `<div>No rewards yet.</div>`;
+  list.forEach((r, i) => {
+    html += `
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div><span style="font-size:1.5em;">${r.emoji}</span> <b>${r.name}</b></div>
+        <div><span style="font-size:1em;">${r.cost} 🐾</span></div>
+      </div>
+      <div style="margin:4px 0 0 0; font-size:1.1em; color:#35776e;">${r.desc}</div>
+      <div style="font-size:0.92em; color:#888;">${r.category}</div>
+      <div style="font-size:0.9em; color:#665;">${r.bonus ? 'Bonus: '+r.bonus : ''}</div>
+      <div style="font-size:0.92em;color:#3c7779;">Left: ${r.quantity??'∞'}</div>
+      <div style="margin-top:10px;">`;
+    if (!isDemo() && isQM) {
+      html += `<button class="edit-btn" onclick="editReward('${r.id}')">✏️ Edit</button>
+               <button class="delete-btn" onclick="deleteRewardAction('${r.id}')">🗑️ Delete</button>`;
+    } else if (!isDemo() && (r.quantity??1)>0) {
+      html += `<button class="paw-action-btn" onclick="claimReward('${r.id}')">Claim</button>`;
+    }
+    html += `</div></div>`;
+  });
+  document.getElementById('page-shop').innerHTML = `<h2>Reward Store</h2>${html}`;
+  document.getElementById('page-shop').onclick = filterHandler('rewards', renderShop);
+}
+window.openRewardModal = function openRewardModal(id) {
   let isEdit = !!id;
-  let r = isEdit && user?.rewards ? user.rewards.find(r=>r.id===id) : { name: '', emoji: DEFAULT_EMOJI[0], category: user?.categories?.[0]?.name||"Goal", desc: '', cost: 1, bonus: '', quantity: 1 };
+  let r = isEdit
+    ? (isDemo() ? userData.rewards.find(r => r.id === id) : rewards.find(r => r.id === id))
+    : { name: '', emoji: DEFAULT_EMOJI[0], category: userData?.categories?.[0]?.name||"Goal", desc: '', cost: 1, bonus: '', quantity: 1 };
   let html = `<h3>${isEdit ? "Edit" : "Add"} Reward</h3>
     <label>Name <input id="reward-name" value="${r.name||""}"></label>
     <label>Category ${categoryDropdown(r.category)}</label>
@@ -419,18 +435,13 @@ function openRewardModal(id) {
     <label>Cost <input id="reward-cost" type="number" min="1" value="${r.cost||1}"></label>
     <label>Bonus <input id="reward-bonus" value="${r.bonus||""}"></label>
     <label>Quantity <input id="reward-quantity" type="number" min="0" value="${r.quantity??1}"></label>
-    <button class="fancy-btn" onclick="${isEdit ? `saveReward(${r.id})` : 'saveReward()'}">Save</button>
+    <button class="fancy-btn" onclick="${isEdit ? `saveReward('${r.id}')` : 'saveReward()'}">Save</button>
     <button class="fancy-btn" onclick="closeModal()">Cancel</button>`;
   openModal(html);
   setupRewardModalDropdowns();
-}
-window.openRewardModal = openRewardModal;
-
-function saveReward(id) {
-  const user = getUserData();
-  if (!user) return;
+};
+window.saveReward = async function saveReward(id) {
   let reward = {
-    id: id || (Math.random()*1e8)|0,
     name: document.getElementById('reward-name').value,
     category: document.getElementById('cat-select').value.replace(/^.*?\s/,''),
     emoji: document.getElementById('emoji-select').value,
@@ -439,89 +450,151 @@ function saveReward(id) {
     bonus: document.getElementById('reward-bonus').value,
     quantity: parseInt(document.getElementById('reward-quantity').value,10)
   };
-  if(!reward.name || !reward.emoji) return alert("Fill all fields");
-  if(id && user.rewards) {
-    let idx = user.rewards.findIndex(r=>r.id===id);
-    if (idx !== -1) user.rewards[idx] = reward;
-  } else if (user.rewards) user.rewards.push(reward);
-  saveData(); closeModal(); renderShop();
-}
-window.saveReward = saveReward;
-
-function editReward(id) { openRewardModal(id); }
-window.editReward = editReward;
-
-function deleteReward(id) {
-  let user = getUserData();
-  if (!user || !user.rewards) return;
-  if (!confirm("Delete this reward?")) return;
-  user.rewards = user.rewards.filter(r => r.id !== id);
-  saveData(); renderShop();
-}
-window.deleteReward = deleteReward;
-
-function claimReward(id) {
-  let user = getUserData();
-  if (!user) return;
-  let r = user.rewards ? user.rewards.find(r=>r.id===id) : null;
+  if (!reward.name || !reward.emoji) return alert("Fill all fields");
+  if (isDemo()) {
+    if (id) {
+      let idx = userData.rewards.findIndex(r=>r.id===id);
+      if (idx !== -1) userData.rewards[idx] = {...reward, id};
+    } else {
+      reward.id = (Math.random()*1e8)|0;
+      userData.rewards.push(reward);
+    }
+    closeModal(); renderShop();
+    return;
+  }
+  if (id) {
+    await updateReward(familyId, id, reward);
+  } else {
+    await addReward(familyId, reward);
+  }
+  await loadAllData();
+  closeModal();
+  renderAll();
+};
+window.editReward = function editReward(id) { openRewardModal(id); };
+window.deleteRewardAction = async function deleteRewardAction(id) {
+  if (isDemo()) {
+    userData.rewards = userData.rewards.filter(r => r.id !== id);
+    renderShop();
+    return;
+  }
+  await deleteReward(familyId, id);
+  await loadAllData();
+  renderAll();
+};
+window.claimReward = async function claimReward(id) {
+  let r = isDemo() ? userData.rewards.find(r => r.id === id) : rewards.find(r => r.id === id);
   if (!r) return;
-  if (user.points < r.cost) return alert("Not enough paws!");
+  if (userData.points < r.cost) return alert("Not enough paws!");
   if (r.quantity !== undefined && r.quantity <= 0) return alert("Out of stock!");
-  user.points -= r.cost;
+  userData.points -= r.cost;
   r.quantity = (r.quantity ?? Infinity) - 1;
-  user.claimed = user.claimed || [];
-  user.claimed.push({
+  userData.claimed = userData.claimed || [];
+  userData.claimed.push({
     id: (Math.random()*1e8)|0,
     name: r.name, emoji: r.emoji, category: r.category, desc: r.desc,
     cost: r.cost, bonus: r.bonus, claimedAt: Date.now(), received: false
   });
-  saveData(); renderShop(); updateUIUser(); renderStatsPage();
-}
-window.claimReward = claimReward;
+  if (!isDemo()) await saveUserData();
+  renderShop(); updateUIUser(); renderStatsPage();
+};
 
-// ====== CLAIMED REWARD BUTTON ======
-function markRewardReceived(id) {
-  const user = getUserData();
-  if (!user || !user.claimed) return;
-  let reward = user.claimed.find(r => r.id === id);
+// ====== CLAIMED REWARDS =======
+function renderClaimedRewards() {
+  const isQM = userData?.role === 'Questmaster';
+  let claimed = userData?.claimed || [];
+  let html = `<h2>Claimed Rewards</h2>`;
+  if (claimed.length === 0) html += "<div>No claimed rewards.</div>";
+  claimed.forEach((c, i) => {
+    html += `<div class="card" style="position:relative;overflow:hidden;">
+      <div><span style="font-size:1.5em">${c.emoji}</span> <b>${c.name}</b> (${c.category})</div>
+      <div>${c.desc}</div>
+      <div>Cost: ${c.cost} 🐾</div>
+      <div>${c.bonus ? 'Bonus: ' + c.bonus : ''}</div>
+      <div style="margin-top:6px;">`;
+    if (c.received) {
+      html += `<div style="margin:10px 0 0 0;display:flex;align-items:center;gap:8px;">
+        <span style="
+          display:inline-block;
+          width:40px;height:40px;
+          border-radius:50%;background:#eafff8;border:2.5px solid #74ccb3;
+          transform: rotate(30deg);
+          position:relative;
+          box-shadow:0 2px 8px #6fedd140;">
+          <span style="font-size:2em;position:absolute;top:2px;left:5px;">🐾</span>
+        </span>
+        <span style="font-size:1.1em;font-weight:bold;color:#388064;">Reward received</span>
+      </div>`;
+    } else {
+      if (isQM) {
+        html += `<button class="fancy-btn" onclick="markRewardReceived(${c.id})">Mark as received</button>`;
+      } else {
+        html += `<span style="color:#888;font-size:1.05em;">Waiting for confirmation...</span>`;
+      }
+    }
+    html += `</div></div>`;
+  });
+  document.getElementById('page-rewards').innerHTML = html;
+}
+window.markRewardReceived = function markRewardReceived(id) {
+  let reward = userData.claimed.find(r => r.id === id);
   if (reward) {
     reward.received = true;
-    saveData();
+    saveUserData();
     renderClaimedRewards();
   }
-}
-window.markRewardReceived = markRewardReceived;
+};
 
-// ====== Роли ======
+// ====== ROLES ======
 function renderUserMenuRoleSwitch() {
   if (isDemo()) return '';
-  let user = getUserData();
-  let role = user?.profile?.role;
+  let role = userData?.role;
   if (!role) return '';
   let other = role === "Questmaster" ? "Performer" : "Questmaster";
   return `<button class="user-menu-item" id="switch-role" type="button">${role} (Switch to ${other})</button>`;
 }
 
-// ====== Статистика ======
+// ====== STATISTICS ======
 function renderStatsPage() {
-  let user = getUserData();
-  if (!user) return;
   let catStats = {};
-  (user.completed || []).forEach(c => { catStats[c.category]=catStats[c.category]||0; catStats[c.category]++; });
-  (user.claimed || []).forEach(c => { catStats[c.category]=catStats[c.category]||0; });
+  (userData.completed || []).forEach(c => { catStats[c.category]=catStats[c.category]||0; catStats[c.category]++; });
+  (userData.claimed || []).forEach(c => { catStats[c.category]=catStats[c.category]||0; });
   let html = `<h2>Statistics</h2>
     <div><b>Completed quests by category:</b><ul>${
       Object.entries(catStats).map(([cat,qty])=>`<li>${cat}: ${qty}</li>`).join('')
     }</ul></div>
-    <div><b>Total rewards claimed:</b> ${(user.claimed||[]).length}</div>
+    <div><b>Total rewards claimed:</b> ${(userData.claimed||[]).length}</div>
     <button class="fancy-btn" onclick="showPage('home')">Back</button>`;
   document.getElementById('page-statistics').innerHTML = html;
 }
 
+// ====== SETTINGS ======
+function renderSettings() {
+  let html = "";
+  if (isDemo()) {
+    html += `<div class="demo-hint">Settings are available after registration.</div>
+      <div>
+        <button class="fancy-btn demo-disabled" disabled>Switch theme</button>
+        <button class="fancy-btn demo-disabled" disabled>Open archive</button>
+        <button class="fancy-btn demo-disabled" disabled>Edit categories</button>
+        <button class="fancy-btn demo-disabled" disabled>Reset all data</button>
+      </div>`;
+  } else {
+    html += `
+      <div>
+        <button class="fancy-btn" id="theme-switcher">Switch theme</button>
+        <button class="fancy-btn" id="archive-open">Open archive</button>
+        <button class="fancy-btn" id="edit-categories">Edit categories</button>
+        <button class="fancy-btn" id="reset-all-data">Reset all data</button>
+      </div>
+    `;
+  }
+  document.getElementById('page-settings').innerHTML = `<h2>Settings</h2>${html}`;
+}
+
 // ====== UI & NAV ======
 function updateUIUser() {
-  const user = getUserData();
-  document.getElementById('paw-balance-val').textContent = user && user.points !== undefined ? user.points : 0;
+  document.getElementById('paw-balance-val').textContent = userData && userData.points !== undefined ? userData.points : 0;
   if (isDemo()) {
     document.getElementById('user-menu').style.display = "none";
     document.getElementById('show-user-menu').disabled = true;
@@ -529,9 +602,8 @@ function updateUIUser() {
     document.getElementById('show-user-menu').disabled = false;
   }
 }
-
 async function renderAll() {
-  await loadData();
+  await loadAllData();
   resetDailiesAndWeeklies();
   updateUIUser();
   renderHome();
@@ -552,9 +624,8 @@ async function renderAll() {
   `;
   document.getElementById('user-menu-edit-profile').onclick = function(e) {
     e.stopPropagation();
-    let user = getUserData();
     openModal(`<h3>Edit Profile</h3>
-      <label>Username <input type="text" value="${user?.profile?.username||''}" disabled></label>
+      <label>Username <input type="text" value="${userData?.username||''}" disabled></label>
       <button class="fancy-btn" onclick="closeModal()">Close</button>
     `); closeUserMenu();
   };
@@ -572,11 +643,8 @@ async function renderAll() {
   let switchRoleBtn = document.getElementById('switch-role');
   if (switchRoleBtn) switchRoleBtn.onclick = function(e) {
     e.stopPropagation();
-    let user = getUserData();
-    if (user && user.profile) {
-      user.profile.role = user.profile.role === "Questmaster" ? "Performer" : "Questmaster";
-      saveData(); renderAll(); closeUserMenu();
-    }
+    userData.role = userData.role === "Questmaster" ? "Performer" : "Questmaster";
+    saveUserData(); renderAll(); closeUserMenu();
   };
   document.getElementById('user-menu-logout').onclick = function(e) {
     e.stopPropagation();
@@ -630,7 +698,6 @@ function openModal(contentHtml = "") {
   modalBg.style.display = "flex";
 }
 function closeModal() { modalBg.style.display = "none"; }
-window.closeModal = closeModal;
 modalBg.addEventListener('click', e => { if (e.target === modalBg) closeModal(); });
 const emojiPickerModal = document.getElementById('emoji-picker-modal');
 function openEmojiPicker() {
@@ -645,15 +712,63 @@ document.addEventListener('keydown', e => {
   }
 });
 
-// ====== On Load ======
-window.onload = async function () {
-  await renderAll();
-};
-window.logout = logout;
-function logout() {
-  logoutUser();
-  localStorage.removeItem('pawFamilyId');
-  localStorage.removeItem('pawCurrentUser');
-  location.reload();
+// ====== Modal helpers for dropdowns ======
+function setupQuestModalDropdowns() {
+  document.getElementById('cat-select').addEventListener('change', function() {
+    if(this.value==="add-cat") {
+      let emoji = prompt("Enter an emoji for the new category:");
+      let name = prompt("Category name:");
+      if(emoji && name) {
+        userData.categories.push({emoji, name});
+        saveUserData();
+        openQuestModal();
+      }
+    }
+  });
+  document.getElementById('emoji-select').addEventListener('change', function() {
+    if(this.value==="add-custom") {
+      let emoji = prompt("Enter a custom emoji:");
+      if(emoji) {
+        userData.customEmojis = userData.customEmojis || [];
+        userData.customEmojis.push(emoji);
+        saveUserData();
+        openQuestModal();
+      }
+    }
+  });
 }
+function setupRewardModalDropdowns() {
+  document.getElementById('cat-select').addEventListener('change', function() {
+    if(this.value==="add-cat") {
+      let emoji = prompt("Enter an emoji for the new category:");
+      let name = prompt("Category name:");
+      if(emoji && name) {
+        userData.categories.push({emoji, name});
+        saveUserData(); openRewardModal();
+      }
+    }
+  });
+  document.getElementById('emoji-select').addEventListener('change', function() {
+    if(this.value==="add-custom") {
+      let emoji = prompt("Enter a custom emoji:");
+      if(emoji) {
+        userData.customEmojis = userData.customEmojis || [];
+        userData.customEmojis.push(emoji); saveUserData(); openRewardModal();
+      }
+    }
+  });
+}
+
+// ====== On Load ======
+window.closeModal = closeModal;
+window.onload = function () { renderAll(); };
+window.openQuestModal = openQuestModal;
+window.openRewardModal = openRewardModal;
+window.saveQuest = saveQuest;
+window.editQuest = editQuest;
+window.deleteQuestAction = deleteQuestAction;
+window.saveReward = saveReward;
+window.editReward = editReward;
+window.deleteRewardAction = deleteRewardAction;
+window.claimReward = claimReward;
 window.logout = logout;
