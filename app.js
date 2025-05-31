@@ -27,9 +27,9 @@ let DEFAULT_EMOJI = [
 ];
 
 // ====== Set User ======
-function setUser(username) {
-  currentUser = username;
-  localStorage.setItem('pawCurrentUser', username);
+function setUser(uid) {
+  currentUser = uid;
+  localStorage.setItem('pawCurrentUser', uid);
 }
 
 // ====== DEMO/DATA ======
@@ -69,6 +69,7 @@ async function loadData() {
     data[DEMO_USER] = getDemoData();
     return;
   }
+  if (!familyId || !currentUser) return;
   data[currentUser] = await fetchUserData(familyId, currentUser);
   quests = await getQuests(familyId);
   rewards = await getRewards(familyId);
@@ -84,7 +85,6 @@ async function saveData() {
 function resetDailiesAndWeeklies() {
   let user = getUserData();
   if (!user || !Array.isArray(user.quests)) return;
-  let now = Date.now();
   let todayStart = new Date(); todayStart.setHours(0,0,0,0);
   if (!user.lastDailyReset || user.lastDailyReset < todayStart.getTime()) {
     user.quests.forEach(q => { if(q.type==='daily') q.done = false; });
@@ -103,7 +103,7 @@ function resetDailiesAndWeeklies() {
 function showLoginModal() {
   openModal(`
     <h3>Sign In</h3>
-    <label>Username <input id="login-username" type="text" autocomplete="username"></label>
+    <label>Email <input id="login-email" type="email" autocomplete="username"></label>
     <label>Password <input id="login-password" type="password" autocomplete="current-password"></label>
     <button class="fancy-btn" onclick="doLogin()">Sign In</button>
     <div style="margin-top:8px;font-size:0.97em;">
@@ -111,24 +111,33 @@ function showLoginModal() {
     </div>
     <div id="login-error" style="color:#c00;font-size:0.97em;"></div>
   `);
-  document.getElementById('login-username').focus();
+  document.getElementById('login-email').focus();
 }
 window.showLoginModal = showLoginModal;
-window.doLogin = function doLogin() {
-  let username = document.getElementById('login-username').value.trim();
+
+window.doLogin = async function doLogin() {
+  let email = document.getElementById('login-email').value.trim();
   let password = document.getElementById('login-password').value.trim();
-  if (!username || !password) {
+  if (!email || !password) {
     document.getElementById('login-error').textContent = "Enter both fields"; return;
   }
-  if (!data[username] || !(data[username].profile && data[username].profile.password === password)) {
-    document.getElementById('login-error').textContent = "Wrong username or password"; return;
+  try {
+    const { familyId: famId, user } = await loginUser({ email, password });
+    if (!famId) throw new Error("Family not found for this user.");
+    familyId = famId;
+    setUser(user.uid);
+    closeModal();
+    await renderAll();
+  } catch (e) {
+    document.getElementById('login-error').textContent = e.message || "Login failed";
   }
-  setUser(username); closeModal(); renderAll();
 };
+
 function showRegisterModal() {
   openModal(`
     <h3>Register</h3>
     <label>Username <input id="register-username" type="text" autocomplete="username"></label>
+    <label>Email <input id="register-email" type="email" autocomplete="email"></label>
     <label>Password <input id="register-password" type="password" autocomplete="new-password"></label>
     <button class="fancy-btn" onclick="doRegister()">Register</button>
     <div style="margin-top:8px;font-size:0.97em;">
@@ -139,22 +148,23 @@ function showRegisterModal() {
   document.getElementById('register-username').focus();
 }
 window.showRegisterModal = showRegisterModal;
-window.doRegister = function doRegister() {
+
+window.doRegister = async function doRegister() {
   let username = document.getElementById('register-username').value.trim();
+  let email = document.getElementById('register-email').value.trim();
   let password = document.getElementById('register-password').value.trim();
-  if (!username || !password) {
-    document.getElementById('register-error').textContent = "Enter both fields"; return;
+  if (!username || !email || !password) {
+    document.getElementById('register-error').textContent = "Enter all fields"; return;
   }
-  if (data[username]) {
-    document.getElementById('register-error').textContent = "User already exists"; return;
+  try {
+    const { familyId: famId, user } = await registerNewUser({ username, email, password });
+    familyId = famId;
+    setUser(user.uid);
+    closeModal();
+    await renderAll();
+  } catch (e) {
+    document.getElementById('register-error').textContent = e.message || "Registration failed";
   }
-  data[username] = {
-    profile: { username, password, role: "Performer" },
-    points: 0, quests: [], completed: [], rewards: [], claimed: [],
-    lastDailyReset: 0, lastWeeklyReset: 0, archive: [],
-    categories: [...DEFAULT_CATEGORIES], customEmojis: []
-  };
-  saveData(); setUser(username); closeModal(); renderAll();
 };
 
 // ====== Emoji/Category Dropdowns ======
@@ -231,9 +241,9 @@ function renderHome() {
       </div>
       <div style="margin:18px 0 0 0; color:#189d8a; text-align:center;">Зарегистрируйтесь, чтобы открыть весь функционал!</div>
     `;
-  } else if (user && user.profile) {
+  } else if (user && user.username) {
     html += `
-      <div class="greeting">🐾 Добро пожаловать, <b>${user.profile.username}</b>!</div>
+      <div class="greeting">🐾 Добро пожаловать, <b>${user.username}</b>!</div>
       <div class="infograph">
         <div class="infocard">
           <span class="big">${stats.balance} 🐾</span>
@@ -259,7 +269,7 @@ function renderHome() {
 function renderQuests(activeCategory = null) {
   resetDailiesAndWeeklies();
   const user = getUserData();
-  const isQM = user?.profile?.role === 'Questmaster';
+  const isQM = user?.role === 'Questmaster';
   let html = renderFilterBar('quests');
   if (isDemo()) {
     html += `<div class="demo-hint">Демо-квесты показывают, как устроено приложение.<br>Попробуйте выполнить их!</div>`;
@@ -295,7 +305,7 @@ function renderQuests(activeCategory = null) {
 // ====== SHOP ======
 function renderShop(activeCategory = null) {
   const user = getUserData();
-  const isQM = user?.profile?.role === 'Questmaster';
+  const isQM = user?.role === 'Questmaster';
   let html = renderFilterBar('rewards');
   if (isDemo()) {
     html += `<div class="demo-hint">В игре награды — это приятные или полезные бонусы, которые можно "покупать" за лапки.<br>
@@ -333,7 +343,7 @@ function renderShop(activeCategory = null) {
 // ====== CLAIMED REWARDS =======
 function renderClaimedRewards() {
   const user = getUserData();
-  const isQM = user?.profile?.role === 'Questmaster';
+  const isQM = user?.role === 'Questmaster';
   let claimed = (user?.claimed || []);
   let html = `<h2>Claimed Rewards</h2>`;
   if (claimed.length === 0) html += "<div>No claimed rewards.</div>";
@@ -396,7 +406,7 @@ function renderSettings() {
 // ====== CRUD Quests ======
 function openQuestModal(id) {
   let user = getUserData(), isEdit = !!id;
-  let quest = isEdit && user?.quests ? user.quests.find(q=>q.id===id) : { type: 'daily', name: '', emoji: DEFAULT_EMOJI[0], category: getUserData()?.categories?.[0]?.name||"Goal", desc: '', pts: 1, done: false };
+  let quest = isEdit && user?.quests ? user.quests.find(q=>q.id===id) : { type: 'daily', name: '', emoji: DEFAULT_EMOJI[0], category: user?.categories?.[0]?.name||"Goal", desc: '', pts: 1, done: false };
   let types = ["daily","weekly","event"].map(t => `<option${quest.type===t?" selected":""}>${t}</option>`).join('');
   let html = `<h3>${isEdit ? "Edit" : "Add"} Quest</h3>
     <label>Type <select id="quest-type">${types}</select></label>
@@ -580,7 +590,7 @@ window.markRewardReceived = markRewardReceived;
 function renderUserMenuRoleSwitch() {
   if (isDemo()) return '';
   let user = getUserData();
-  let role = user?.profile?.role;
+  let role = user?.role;
   if (!role) return '';
   let other = role === "Questmaster" ? "Performer" : "Questmaster";
   return `<button class="user-menu-item" id="switch-role" type="button">${role} (Switch to ${other})</button>`;
@@ -638,7 +648,7 @@ async function renderAll() {
     e.stopPropagation();
     let user = getUserData();
     openModal(`<h3>Edit Profile</h3>
-      <label>Username <input type="text" value="${user?.profile?.username||''}" disabled></label>
+      <label>Username <input type="text" value="${user?.username||''}" disabled></label>
       <button class="fancy-btn" onclick="closeModal()">Close</button>
     `); closeUserMenu();
   };
@@ -657,8 +667,8 @@ async function renderAll() {
   if (switchRoleBtn) switchRoleBtn.onclick = function(e) {
     e.stopPropagation();
     let user = getUserData();
-    if (user && user.profile) {
-      user.profile.role = user.profile.role === "Questmaster" ? "Performer" : "Questmaster";
+    if (user) {
+      user.role = user.role === "Questmaster" ? "Performer" : "Questmaster";
       saveData(); renderAll(); closeUserMenu();
     }
   };
