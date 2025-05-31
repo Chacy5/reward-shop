@@ -252,18 +252,18 @@ function renderHome() {
 function renderQuests(activeCategory = null) {
   resetDailiesAndWeeklies();
   const user = getUserData();
-  const isQM = user.profile.role === 'Questmaster';
+  const isQM = user?.profile?.role === 'Questmaster';
   let html = renderFilterBar('quests');
   if (isDemo()) {
     html += `<div class="demo-hint">Демо-квесты показывают, как устроено приложение.<br>Попробуйте выполнить их!</div>`;
   } else if (isQM) {
     html += `<button class="paw-action-btn" onclick="openQuestModal()">+ Add quest</button>`;
   }
-  let list = user.quests.filter(q=>!q.done || q.type==="event");
+  let list = (user?.quests || []).filter(q => !q.done || q.type === "event");
   if (activeCategory) list = list.filter(q => q.category === activeCategory);
   if (list.length === 0) html += `<div>No active quests.</div>`;
   list.forEach((q, i) => {
-    if(q.type!=="event" && q.done) return;
+    if (q.type !== "event" && q.done) return;
     html += `
     <div class="card ${q.type}">
       <div style="display:flex;justify-content:space-between;align-items:center;">
