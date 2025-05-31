@@ -474,19 +474,10 @@ function saveQuest(id) {
 }
 function editQuest(id) { openQuestModal(id); }
 
-function completeQuest(id) {
-  let user = getUserData();
-  if (!user) return;
-  let q = user.quests ? user.quests.find(q=>q.id===id) : null;
-  if (!q) return;
-  q.done = true; q.lastDone = Date.now();
-  user.points += q.pts;
-  user.completed = user.completed || [];
-  user.completed.push({...q, completedAt: Date.now() });
-  if(q.type==="event" && user.quests) user.quests = user.quests.filter(qq=>qq.id!==id);
-  saveData(); renderQuests(); updateUIUser(); renderStatsPage();
-}
-window.completeQuest = completeQuest;
+// Экспорт для onclick
+window.openQuestModal = openQuestModal;
+window.saveQuest = saveQuest;
+window.editQuest = editQuest;
 
 // ====== CRUD Rewards ======
 function openRewardModal(id) {
@@ -555,6 +546,10 @@ function saveReward(id) {
 }
 function editReward(id) { openRewardModal(id); }
 
+window.openRewardModal = openRewardModal;
+window.saveReward = saveReward;
+window.editReward = editReward;
+
 function claimReward(id) {
   let user = getUserData();
   if (!user) return;
@@ -572,6 +567,7 @@ function claimReward(id) {
   });
   saveData(); renderShop(); updateUIUser(); renderStatsPage();
 }
+window.claimReward = claimReward;
 
 // ====== CLAIMED REWARD BUTTON ======
 function markRewardReceived(id) {
@@ -742,8 +738,6 @@ document.addEventListener('keydown', e => {
 });
 
 // ====== On Load ======
-window.openQuestModal = openQuestModal;
-window.openRewardModal = openRewardModal;
 window.logout = logout;
 function logout() {
   logoutUser();
