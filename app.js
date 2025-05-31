@@ -1,3 +1,133 @@
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
+import { 
+  getAuth, 
+  onAuthStateChanged, 
+  signInWithEmailAndPassword, 
+  createUserWithEmailAndPassword, 
+  signOut 
+} from "https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js";
+import { 
+  getFirestore, 
+  doc, 
+  getDoc, 
+  setDoc, 
+  updateDoc 
+} from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBDHjCE7CYC_jxL7EPjUApVvrd8avHmcNA",
+  authDomain: "talk-to-my-paw.firebaseapp.com",
+  databaseURL: "https://talk-to-my-paw-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "talk-to-my-paw",
+  storageBucket: "talk-to-my-paw.appspot.com",
+  messagingSenderId: "1023228484299",
+  appId: "1:1023228484299:web:df2f42b4bebff7c82b194e",
+  measurementId: "G-X51RCW3ND0"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+let user = null;
+let groupId = null;
+let quests = [];
+let rewards = [];
+
+// ==== AUTH UI ====
+function renderAuth() {
+  const block = document.getElementById('auth-block');
+  if (!user) {
+    block.innerHTML = `
+      <div style="max-width:350px;margin:20px auto;">
+        <h3>Вход или регистрация</h3>
+        <input id="email" type="email" placeholder="Email" style="width:100%;margin-bottom:8px;">
+        <input id="password" type="password" placeholder="Пароль" style="width:100%;margin-bottom:8px;">
+        <input id="group" placeholder="Название группы (семьи)" style="width:100%;margin-bottom:12px;">
+        <button class="fancy-btn" id="signup-btn">Зарегистрироваться</button>
+        <button class="fancy-btn" id="signin-btn">Войти</button>
+      </div>
+    `;
+    document.getElementById('signup-btn').onclick = signUp;
+    document.getElementById('signin-btn').onclick = signIn;
+  } else {
+    block.innerHTML = `
+      <div style="max-width:350px;margin:20px auto;">
+        <h3>Вы вошли как <b>${user.email}</b></h3>
+        <div>Группа: <b>${groupId || "—"}</b></div>
+        <button class="fancy-btn" id="signout-btn">Выйти</button>
+      </div>
+    `;
+    document.getElementById('signout-btn').onclick = signOutUser;
+  }
+}
+async function signUp() {
+  const email = document.getElementById('email').value.trim();
+  const password = document.getElementById('password').value.trim();
+  const group = document.getElementById('group').value.trim();
+  if (!email || !password || !group) return alert('Заполните все поля!');
+  try {
+    const cred = await createUserWithEmailAndPassword(auth, email, password);
+    user = cred.user;
+    groupId = group.replace(/[^\w-]/g,'').toLowerCase();
+    await saveUserGroup(email, groupId);
+  } catch(e) { alert(e.message); }
+}
+async function signIn() {
+  const email = document.getElementById('email').value.trim();
+  const password = document.getElementById('password').value.trim();
+  const group = document.getElementById('group').value.trim();
+  if (!email || !password || !group) return alert('Заполните все поля!');
+  try {
+    const cred = await signInWithEmailAndPassword(auth, email, password);
+    user = cred.user;
+    groupId = group.replace(/[^\w-]/g,'').toLowerCase();
+    await saveUserGroup(email, groupId, false); // не создаём, только входим
+  } catch(e) { alert(e.message); }
+}
+function signOutUser() {
+  signOut(auth);
+  user = null; groupId = null; quests=[]; rewards=[];
+  renderAll();
+}
+onAuthStateChanged(auth, u => {
+  user = u;
+  renderAll();
+  if (user && groupId) loadData();
+});
+
+// Сохраняем пользователя в группе (и саму группу если её нет)
+async function saveUserGroup(email, group, create=true) {
+  groupId = group;
+  const groupRef = doc(db, "groups", groupId);
+  const docSnap = await getDoc(groupRef);
+  if (!docSnap.exists() && create) {
+    await setDoc(groupRef, {
+      users: { [user.uid]: email },
+      quests: [],
+      rewards: []
+    });
+    await loadData();
+  } else {
+    await loadData();
+  }
+}
+
+// ==== LOAD/SAVE FIRESTORE ====
+async function loadData() {
+  if (!user || !groupId) return;
+  const ref = doc(db, "groups", groupId);
+  const docSnap = await getDoc(ref);
+  const data = docSnap.data();
+  quests = data.quests || [];
+  rewards = data.rewards || [];
+  renderAll();
+}
+async function saveAll() {
+  if (!user || !groupId) return;
+  const ref = doc(db, "groups", groupId);
+  await updateDoc(ref, { quests, rewards });
+}
 // ====== Globals and Data ======
 let currentUser = localStorage.getItem('pawCurrentUser') || "";
 let data = {};
