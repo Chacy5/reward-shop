@@ -189,9 +189,9 @@ function filterHandler(type, renderFunc) {
 function renderHome() {
   const user = getUserData();
   const stats = {
-    completed: (user.completed || []).length,
-    claimed: (user.claimed || []).length,
-    balance: user.points || 0
+    completed: (user?.completed || []).length,
+    claimed: (user?.claimed || []).length,
+    balance: user?.points || 0
   };
   let html = "";
   if (isDemo()) {
@@ -224,7 +224,7 @@ function renderHome() {
       </div>
       <div style="margin:18px 0 0 0; color:#189d8a; text-align:center;">Зарегистрируйтесь, чтобы открыть весь функционал!</div>
     `;
-  } else {
+ } else if (user && user.profile) {
     html += `
       <div class="greeting">🐾 Добро пожаловать, <b>${user.profile.username}</b>!</div>
       <div class="infograph">
@@ -242,6 +242,8 @@ function renderHome() {
         </div>
       </div>
     `;
+  } else {
+    html += `<div class="greeting">Ошибка загрузки данных пользователя.</div>`;
   }
   document.getElementById('page-home').innerHTML = html;
 }
