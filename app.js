@@ -6,10 +6,22 @@ import {
   getRewards, addReward, updateReward, deleteReward
 } from "./firestore-api.js";
 
+// ====== Clean Object (No undefineds for Firestore) ======
+function cleanObject(obj) {
+  if (!obj || typeof obj !== 'object') return obj;
+  let out = Array.isArray(obj) ? [] : {};
+  for (let k in obj) {
+    if (obj[k] !== undefined) {
+      out[k] = (typeof obj[k] === 'object' && obj[k] !== null) ? cleanObject(obj[k]) : obj[k];
+    }
+  }
+  return out;
+}
+
 // ====== Globals and Data ======
 let familyId = localStorage.getItem('pawFamilyId') || "";
 let currentUser = localStorage.getItem('pawCurrentUser') || "";
-let userData = null; // Only for the current user!
+let userData = null;
 let quests = [];
 let rewards = [];
 let DEMO_USER = "demo";
@@ -70,7 +82,7 @@ async function loadAllData() {
 }
 async function saveUserData() {
   if (!isDemo() && currentUser && userData) {
-    await updateUserData(familyId, currentUser, userData);
+    await updateUserData(familyId, currentUser, cleanObject(userData));
   }
 }
 
