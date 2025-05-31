@@ -189,9 +189,9 @@ function filterHandler(type, renderFunc) {
 function renderHome() {
   const user = getUserData();
   const stats = {
-    completed: user.completed.length,
-    claimed: user.claimed.length,
-    balance: user.points
+    completed: (user.completed || []).length,
+    claimed: (user.claimed || []).length,
+    balance: user.points || 0
   };
   let html = "";
   if (isDemo()) {
