@@ -690,3 +690,10 @@ window.onload = function () { loadData(); renderAll(); };
 window.openQuestModal = openQuestModal;
 window.openRewardModal = openRewardModal;
 window.logout = logout;
+function logout() {
+  logoutUser();
+  localStorage.removeItem('pawFamilyId');
+  localStorage.removeItem('pawCurrentUser');
+  location.reload();
+}
+window.logout = logout;
