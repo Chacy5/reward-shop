@@ -77,7 +77,6 @@ async function saveUserData() {
 // ====== Periodic Quest Reset ======
 function resetDailiesAndWeeklies() {
   if (!userData || !Array.isArray(userData.quests)) return;
-  let now = Date.now();
   let todayStart = new Date(); todayStart.setHours(0,0,0,0);
   if (!userData.lastDailyReset || userData.lastDailyReset < todayStart.getTime()) {
     userData.quests.forEach(q => { if(q.type==='daily') q.done = false; });
@@ -555,6 +554,30 @@ function renderStatsPage() {
     <div><b>Total rewards claimed:</b> ${(userData.claimed||[]).length}</div>
     <button class="fancy-btn" onclick="showPage('home')">Back</button>`;
   document.getElementById('page-statistics').innerHTML = html;
+}
+
+// ====== SETTINGS ======
+function renderSettings() {
+  let html = "";
+  if (isDemo()) {
+    html += `<div class="demo-hint">Settings are available after registration.</div>
+      <div>
+        <button class="fancy-btn demo-disabled" disabled>Switch theme</button>
+        <button class="fancy-btn demo-disabled" disabled>Open archive</button>
+        <button class="fancy-btn demo-disabled" disabled>Edit categories</button>
+        <button class="fancy-btn demo-disabled" disabled>Reset all data</button>
+      </div>`;
+  } else {
+    html += `
+      <div>
+        <button class="fancy-btn" id="theme-switcher">Switch theme</button>
+        <button class="fancy-btn" id="archive-open">Open archive</button>
+        <button class="fancy-btn" id="edit-categories">Edit categories</button>
+        <button class="fancy-btn" id="reset-all-data">Reset all data</button>
+      </div>
+    `;
+  }
+  document.getElementById('page-settings').innerHTML = `<h2>Settings</h2>${html}`;
 }
 
 // ====== UI & NAV ======
