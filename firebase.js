@@ -1,36 +1,19 @@
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
+import { getAuth } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js";
+import { getFirestore } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
 
-import { initializeApp } from "firebase/app";
-import { getFirestore, doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
-
-const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_DOMAIN",
-  projectId: "YOUR_PROJECT_ID",
+// !!! ВСТАВЬ СВОЙ КОНФИГ ЕСЛИ НАДО !!!
+export const firebaseConfig = {
+  apiKey: "AIzaSyBDHjCE7CYC_jxL7EPjUApVvrd8avHmcNA",
+  authDomain: "talk-to-my-paw.firebaseapp.com",
+  databaseURL: "https://talk-to-my-paw-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "talk-to-my-paw",
+  storageBucket: "talk-to-my-paw.appspot.com",
+  messagingSenderId: "1023228484299",
+  appId: "1:1023228484299:web:df2f42b4bebff7c82b194e",
+  measurementId: "G-X51RCW3ND0"
 };
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
 
-// Пример: создать новую группу и пользователя
-async function registerUser(groupName, userName, password) {
-  const groupRef = doc(db, "groups", groupName);
-  const groupSnap = await getDoc(groupRef);
-  if (!groupSnap.exists()) {
-    // Создаём группу и первого пользователя
-    await setDoc(groupRef, {
-      users: { [userName]: { password, role: "user" } },
-      points: { [userName]: 0 },
-      quests: [],
-      rewards: [],
-      claimed: [],
-      completed: []
-    });
-  } else {
-    // Добавляем пользователя в существующую группу
-    const data = groupSnap.data();
-    if (data.users && data.users[userName]) throw "User already exists";
-    await updateDoc(groupRef, {
-      [`users.${userName}`]: { password, role: "user" },
-      [`points.${userName}`]: 0
-    });
-  }
-}
+export const app = initializeApp(firebaseConfig);
+export const auth = getAuth(app);
+export const db = getFirestore(app);
