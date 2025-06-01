@@ -213,6 +213,102 @@ function filterHandler(type, renderFunc) {
   };
 }
 
+// ====== FRIENDS PAGE ======
+async function renderFriendsPage() {
+  let html = `<h2>Friends</h2>`;
+  if (isDemo()) {
+    html += `<div class="demo-hint">Friendship available after registration.</div>`;
+    document.getElementById('page-friends').innerHTML = html;
+    return;
+  }
+  html += `
+    <div>
+      <input id="friend-uid-input" placeholder="Username or Email" style="width:60%;">
+      <button class="fancy-btn" id="add-friend-btn">Add friend</button>
+    </div>
+    <div id="friend-add-status" style="color:#189d8a;margin:6px 0 12px 0;"></div>
+  `;
+
+  let { incoming, outgoing } = await getFriendRequests(familyId, currentUser);
+
+  // Список друзей с их именами
+  const friends = await getFriends(familyId, currentUser);
+  let friendInfos = {};
+  for (const f of friends) {
+    let fid = await findFamilyIdByUserId(f.uid);
+    let data = fid ? await fetchUserData(fid, f.uid) : null;
+    friendInfos[f.uid] = data;
+  }
+
+  html += `<div><b>Your friends:</b><ul>`;
+  for (const f of friends) {
+    const info = friendInfos[f.uid];
+    const name = info ? (info.username || info.email || f.uid) : f.uid;
+    html += `<li>
+      <b>${name}</b> 
+      <span style="color:#888;font-size:0.95em;">[${f.status}${f.asQuestmaster ? ', Questmaster' : ''}]</span>
+      <button class="fancy-btn" onclick="removeFriendUI('${f.uid}')">Remove</button>
+      <button class="fancy-btn" onclick="toggleQMUI('${f.uid}', ${!f.asQuestmaster})">
+        ${f.asQuestmaster ? 'Remove QM' : 'Make QM'}
+      </button>
+      <button class="fancy-btn" onclick="viewFriendAccount('${f.uid}')">View Account</button>
+      </li>`;
+  }
+  html += `</ul></div>`;
+
+  document.getElementById('page-friends').innerHTML = html;
+
+  document.getElementById('add-friend-btn').onclick = async () => {
+    let v = document.getElementById('friend-uid-input').value.trim();
+    if (!v) return;
+    try {
+      const user = await findUserByUsernameOrEmail(v);
+      if (!user) {
+        document.getElementById('friend-add-status').textContent = "User not found!";
+        return;
+      }
+      if (user.uid === currentUser) {
+        document.getElementById('friend-add-status').textContent = "It's you!";
+        return;
+      }
+      await sendFriendRequest(familyId, currentUser, user.uid);
+      document.getElementById('friend-add-status').textContent = "Request sent!";
+      renderFriendsPage();
+    } catch (e) {
+      document.getElementById('friend-add-status').textContent = "Error: " + e.message;
+    }
+  };
+}
+window.renderFriendsPage = renderFriendsPage;
+window.acceptFriendUI = async function(uid) {
+  await acceptFriendRequest(familyId, currentUser, uid);
+  renderFriendsPage();
+};
+window.declineFriendUI = async function(uid) {
+  await declineFriendRequest(familyId, currentUser, uid);
+  renderFriendsPage();
+};
+window.removeFriendUI = async function(uid) {
+  await removeFriend(familyId, currentUser, uid);
+  renderFriendsPage();
+};
+window.toggleQMUI = async function(uid, asQM) {
+  await setFriendAsQuestmaster(familyId, currentUser, uid, asQM);
+  renderFriendsPage();
+};
+window.viewFriendAccount = async function(uid) {
+  viewingUserId = uid;
+  viewingFamilyId = await findFamilyIdByUserId(uid);
+  await loadAllData();
+  renderAll();
+};
+window.viewMyAccount = async function() {
+  viewingUserId = null;
+  viewingFamilyId = null;
+  await loadAllData();
+  renderAll();
+};
+
 // ====== HOME (с учетом режима просмотра чужого аккаунта) ======
 function renderHome() {
   const stats = {
@@ -774,105 +870,6 @@ function setupRewardModalDropdowns() {
     }
   });
 }
-
-
-// ====== FRIENDS PAGE (с View Account) ======
-async function renderFriendsPage() {
-  let html = `<h2>Friends</h2>`;
-  if (isDemo()) {
-    html += `<div class="demo-hint">Friendship available after registration.</div>`;
-    document.getElementById('page-friends').innerHTML = html;
-    return;
-  }
-  html += `
-    <div>
-      <input id="friend-uid-input" placeholder="Username or Email" style="width:60%;">
-      <button class="fancy-btn" id="add-friend-btn">Add friend</button>
-    </div>
-    <div id="friend-add-status" style="color:#189d8a;margin:6px 0 12px 0;"></div>
-  `;
-
-  let { incoming, outgoing } = await getFriendRequests(familyId, currentUser);
-
-  // Список друзей с их именами
-  const friends = await getFriends(familyId, currentUser);
-  let friendInfos = {};
-  for (const f of friends) {
-    let fid = await findFamilyIdByUserId(f.uid);
-    let data = fid ? await fetchUserData(fid, f.uid) : null;
-    friendInfos[f.uid] = data;
-  }
-
-  html += `<div><b>Your friends:</b><ul>`;
-  for (const f of friends) {
-    const info = friendInfos[f.uid];
-    const name = info ? (info.username || info.email || f.uid) : f.uid;
-    html += `<li>
-      <b>${name}</b> 
-      <span style="color:#888;font-size:0.95em;">[${f.status}${f.asQuestmaster ? ', Questmaster' : ''}]</span>
-      <button class="fancy-btn" onclick="removeFriendUI('${f.uid}')">Remove</button>
-      <button class="fancy-btn" onclick="toggleQMUI('${f.uid}', ${!f.asQuestmaster})">
-        ${f.asQuestmaster ? 'Remove QM' : 'Make QM'}
-      </button>
-      <button class="fancy-btn" onclick="viewFriendAccount('${f.uid}')">View Account</button>
-      </li>`;
-  }
-  html += `</ul></div>`;
-
-  document.getElementById('page-friends').innerHTML = html;
-
-  document.getElementById('add-friend-btn').onclick = async () => {
-    let v = document.getElementById('friend-uid-input').value.trim();
-    if (!v) return;
-    try {
-      const user = await findUserByUsernameOrEmail(v);
-      if (!user) {
-        document.getElementById('friend-add-status').textContent = "User not found!";
-        return;
-      }
-      if (user.uid === currentUser) {
-        document.getElementById('friend-add-status').textContent = "It's you!";
-        return;
-      }
-      await sendFriendRequest(familyId, currentUser, user.uid);
-      document.getElementById('friend-add-status').textContent = "Request sent!";
-      renderFriendsPage();
-    } catch (e) {
-      document.getElementById('friend-add-status').textContent = "Error: " + e.message;
-    }
-  };
-}
-window.renderFriendsPage = renderFriendsPage;
-window.acceptFriendUI = async function(uid) {
-  await acceptFriendRequest(familyId, currentUser, uid);
-  renderFriendsPage();
-};
-window.declineFriendUI = async function(uid) {
-  await declineFriendRequest(familyId, currentUser, uid);
-  renderFriendsPage();
-};
-window.removeFriendUI = async function(uid) {
-  await removeFriend(familyId, currentUser, uid);
-  renderFriendsPage();
-};
-window.toggleQMUI = async function(uid, asQM) {
-  await setFriendAsQuestmaster(familyId, currentUser, uid, asQM);
-  renderFriendsPage();
-};
-window.viewFriendAccount = async function(uid) {
-  viewingUserId = uid;
-  viewingFamilyId = await findFamilyIdByUserId(uid);
-  await loadAllData();
-  renderAll();
-};
-window.viewMyAccount = async function() {
-  viewingUserId = null;
-  viewingFamilyId = null;
-  await loadAllData();
-  renderAll();
-};
-
-
 
 // ====== On Load ======
 window.closeModal = closeModal;
