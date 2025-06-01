@@ -664,6 +664,7 @@ const navLinks = document.querySelectorAll('nav.bottom a');
 const pages = document.querySelectorAll('.page');
 const pawBalance = document.getElementById('paw-balance');
 function showPage(pageId) {
+if (pageId === "friends") renderFriendsPage();
   pages.forEach(p => p.classList.remove('active'));
   navLinks.forEach(n => n.classList.remove('active'));
   document.getElementById('page-' + pageId).classList.add('active');
@@ -762,6 +763,7 @@ function setupRewardModalDropdowns() {
   });
 }
 
+
 // ====== FRIENDS PAGE ======
 async function renderFriendsPage() {
   let html = `<h2>Friends</h2>`;
@@ -857,7 +859,6 @@ window.toggleQMUI = async function(uid, asQM) {
   await setFriendAsQuestmaster(familyId, currentUser, uid, asQM);
   renderFriendsPage();
 };
-
 
 // ====== On Load ======
 window.closeModal = closeModal;
