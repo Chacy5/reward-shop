@@ -3,9 +3,10 @@ import {
   registerNewUser, loginUser, logoutUser,
   getUserData as fetchUserData, updateUserData,
   getQuests, addQuest, updateQuest, deleteQuest,
-  getRewards, addReward, updateReward, deleteReward,  getFriends, getFriendRequests, sendFriendRequest,
+  getRewards, addReward, updateReward, deleteReward,
+  getFriends, getFriendRequests, sendFriendRequest,
   acceptFriendRequest, declineFriendRequest, removeFriend,
-  setFriendAsQuestmaster
+  setFriendAsQuestmaster, findUserByUsernameOrEmail
 } from "./firestore-api.js";
 
 // ====== Clean Object (No undefineds for Firestore) ======
@@ -761,6 +762,7 @@ function setupRewardModalDropdowns() {
   });
 }
 
+// ====== FRIENDS PAGE ======
 async function renderFriendsPage() {
   let html = `<h2>Friends</h2>`;
   if (isDemo()) {
@@ -769,10 +771,10 @@ async function renderFriendsPage() {
     return;
   }
 
-  // 1. Форма для поиска и добавления друга
+  // 1. Форма для поиска и добавления друга (по username или email)
   html += `
     <div>
-      <input id="friend-uid-input" placeholder="User UID or email" style="width:60%;">
+      <input id="friend-uid-input" placeholder="Username or Email" style="width:60%;">
       <button class="fancy-btn" id="add-friend-btn">Add friend</button>
     </div>
     <div id="friend-add-status" style="color:#189d8a;margin:6px 0 12px 0;"></div>
@@ -818,7 +820,17 @@ async function renderFriendsPage() {
     let v = document.getElementById('friend-uid-input').value.trim();
     if (!v) return;
     try {
-      await sendFriendRequest(familyId, currentUser, v);
+      // Новый поиск по username/email
+      const user = await findUserByUsernameOrEmail(v);
+      if (!user) {
+        document.getElementById('friend-add-status').textContent = "User not found!";
+        return;
+      }
+      if (user.uid === currentUser) {
+        document.getElementById('friend-add-status').textContent = "It's you!";
+        return;
+      }
+      await sendFriendRequest(familyId, currentUser, user.uid);
       document.getElementById('friend-add-status').textContent = "Request sent!";
       renderFriendsPage();
     } catch (e) {
@@ -845,6 +857,7 @@ window.toggleQMUI = async function(uid, asQM) {
   await setFriendAsQuestmaster(familyId, currentUser, uid, asQM);
   renderFriendsPage();
 };
+
 
 // ====== On Load ======
 window.closeModal = closeModal;
