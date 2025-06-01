@@ -137,6 +137,108 @@ export async function deleteReward(familyId, rewardId) {
   saveData();
   renderRewards();
 }
+// ====== ДРУЗЬЯ и КВЕСТМАСТЕРЫ ======
+
+// Структура в users: 
+// friends: [{uid, status: 'pending'|'accepted', asQuestmaster: boolean }]
+// incomingFriendRequests: [uid]
+// outgoingFriendRequests: [uid]
+// questmasters: [uid]  // те, кто квестмастер для этого пользователя
+
+// -- Отправить заявку в друзья
+export async function sendFriendRequest(myFamilyId, myUid, theirUid) {
+  // Найти familyId друга
+  let theirFamilyId = await findFamilyIdByUserId(theirUid);
+  if (!theirFamilyId) throw new Error("User not found");
+
+  // Добавить в outgoingFriendRequests отправителя
+  await updateDoc(doc(db, "families", myFamilyId, "users", myUid), {
+    outgoingFriendRequests: arrayUnion(theirUid)
+  });
+  // Добавить в incomingFriendRequests получателя
+  await updateDoc(doc(db, "families", theirFamilyId, "users", theirUid), {
+    incomingFriendRequests: arrayUnion(myUid)
+  });
+}
+
+// -- Принять заявку
+export async function acceptFriendRequest(myFamilyId, myUid, theirUid) {
+  let theirFamilyId = await findFamilyIdByUserId(theirUid);
+  if (!theirFamilyId) throw new Error("User not found");
+
+  // Удалить заявку из incoming/outgoing
+  await updateDoc(doc(db, "families", myFamilyId, "users", myUid), {
+    incomingFriendRequests: arrayRemove(theirUid),
+    friends: arrayUnion({ uid: theirUid, status: "accepted", asQuestmaster: false })
+  });
+  await updateDoc(doc(db, "families", theirFamilyId, "users", theirUid), {
+    outgoingFriendRequests: arrayRemove(myUid),
+    friends: arrayUnion({ uid: myUid, status: "accepted", asQuestmaster: false })
+  });
+}
+
+// -- Отклонить заявку
+export async function declineFriendRequest(myFamilyId, myUid, theirUid) {
+  let theirFamilyId = await findFamilyIdByUserId(theirUid);
+  if (!theirFamilyId) throw new Error("User not found");
+  await updateDoc(doc(db, "families", myFamilyId, "users", myUid), {
+    incomingFriendRequests: arrayRemove(theirUid)
+  });
+  await updateDoc(doc(db, "families", theirFamilyId, "users", theirUid), {
+    outgoingFriendRequests: arrayRemove(myUid)
+  });
+}
+
+// -- Удалить друга
+export async function removeFriend(myFamilyId, myUid, theirUid) {
+  let theirFamilyId = await findFamilyIdByUserId(theirUid);
+  if (!theirFamilyId) throw new Error("User not found");
+  // Удалить из friends
+  const myDocRef = doc(db, "families", myFamilyId, "users", myUid);
+  const theirDocRef = doc(db, "families", theirFamilyId, "users", theirUid);
+
+  // Получить текущие friends для удаления по uid
+  let myData = (await getDoc(myDocRef)).data();
+  let theirData = (await getDoc(theirDocRef)).data();
+
+  let myFriends = (myData.friends||[]).filter(f => f.uid !== theirUid);
+  let theirFriends = (theirData.friends||[]).filter(f => f.uid !== myUid);
+
+  await updateDoc(myDocRef, { friends: myFriends });
+  await updateDoc(theirDocRef, { friends: theirFriends });
+}
+
+// -- Назначить/снять друга как квестмастера
+export async function setFriendAsQuestmaster(myFamilyId, myUid, theirUid, asQuestmaster) {
+  let myDocRef = doc(db, "families", myFamilyId, "users", myUid);
+  // Обновить поле friends: asQuestmaster
+  let myData = (await getDoc(myDocRef)).data();
+  let friends = (myData.friends||[]).map(f =>
+    f.uid === theirUid ? { ...f, asQuestmaster } : f
+  );
+  await updateDoc(myDocRef, { friends });
+}
+
+// -- Получить список друзей (с их статусами)
+export async function getFriends(myFamilyId, myUid) {
+  let user = (await getDoc(doc(db, "families", myFamilyId, "users", myUid))).data();
+  return user?.friends || [];
+}
+
+// -- Получить входящие/исходящие заявки
+export async function getFriendRequests(myFamilyId, myUid) {
+  let user = (await getDoc(doc(db, "families", myFamilyId, "users", myUid))).data();
+  return {
+    incoming: user?.incomingFriendRequests || [],
+    outgoing: user?.outgoingFriendRequests || []
+  };
+}
+
+// -- Проверить, является ли пользователь квестмастером для кого-то
+export async function isQuestmasterFor(targetFamilyId, targetUid, myUid) {
+  let targetUser = (await getDoc(doc(db, "families", targetFamilyId, "users", targetUid))).data();
+  return !!(targetUser?.friends || []).find(f => f.uid === myUid && f.asQuestmaster);
+}
 
 // Выход
 export async function logoutUser() {
