@@ -5,7 +5,7 @@ import {
   signOut
 } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js";
 import {
-  doc, setDoc, getDoc, updateDoc, collection, addDoc, getDocs, deleteDoc
+  doc, setDoc, getDoc, updateDoc, collection, addDoc, getDocs, deleteDoc, arrayUnion, arrayRemove
 } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
 
 // Регистрация: создает пользователя и новую семью (family)
@@ -58,6 +58,24 @@ export async function findFamilyIdByUserId(userId) {
   for (const famDoc of familiesSnap.docs) {
     const userDoc = await getDoc(doc(db, "families", famDoc.id, "users", userId));
     if (userDoc.exists()) return famDoc.id;
+  }
+  return null;
+}
+
+// Поиск пользователя по username или email (по всем семьям)
+export async function findUserByUsernameOrEmail(query) {
+  const familiesSnap = await getDocs(collection(db, "families"));
+  for (const famDoc of familiesSnap.docs) {
+    const usersSnap = await getDocs(collection(db, "families", famDoc.id, "users"));
+    for (const userDoc of usersSnap.docs) {
+      const data = userDoc.data();
+      if (
+        data.username?.toLowerCase() === query.toLowerCase() ||
+        data.email?.toLowerCase() === query.toLowerCase()
+      ) {
+        return { uid: userDoc.id, familyId: famDoc.id, ...data };
+      }
+    }
   }
   return null;
 }
@@ -137,6 +155,7 @@ export async function deleteReward(familyId, rewardId) {
   saveData();
   renderRewards();
 }
+
 // ====== ДРУЗЬЯ и КВЕСТМАСТЕРЫ ======
 
 // Структура в users: 
