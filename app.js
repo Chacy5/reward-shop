@@ -3,7 +3,9 @@ import {
   registerNewUser, loginUser, logoutUser,
   getUserData as fetchUserData, updateUserData,
   getQuests, addQuest, updateQuest, deleteQuest,
-  getRewards, addReward, updateReward, deleteReward
+  getRewards, addReward, updateReward, deleteReward,  getFriends, getFriendRequests, sendFriendRequest,
+  acceptFriendRequest, declineFriendRequest, removeFriend,
+  setFriendAsQuestmaster
 } from "./firestore-api.js";
 
 // ====== Clean Object (No undefineds for Firestore) ======
@@ -758,6 +760,91 @@ function setupRewardModalDropdowns() {
     }
   });
 }
+
+async function renderFriendsPage() {
+  let html = `<h2>Friends</h2>`;
+  if (isDemo()) {
+    html += `<div class="demo-hint">Friendship available after registration.</div>`;
+    document.getElementById('page-friends').innerHTML = html;
+    return;
+  }
+
+  // 1. Форма для поиска и добавления друга
+  html += `
+    <div>
+      <input id="friend-uid-input" placeholder="User UID or email" style="width:60%;">
+      <button class="fancy-btn" id="add-friend-btn">Add friend</button>
+    </div>
+    <div id="friend-add-status" style="color:#189d8a;margin:6px 0 12px 0;"></div>
+  `;
+
+  // 2. Показываем заявки
+  let { incoming, outgoing } = await getFriendRequests(familyId, currentUser);
+  if (incoming.length) {
+    html += `<div><b>Incoming requests:</b><ul>`;
+    for (let uid of incoming) {
+      html += `<li>${uid} <button class="fancy-btn" onclick="acceptFriendUI('${uid}')">Accept</button>
+        <button class="fancy-btn" onclick="declineFriendUI('${uid}')">Decline</button></li>`;
+    }
+    html += `</ul></div>`;
+  }
+  if (outgoing.length) {
+    html += `<div><b>Outgoing requests:</b><ul>`;
+    for (let uid of outgoing) {
+      html += `<li>${uid}</li>`;
+    }
+    html += `</ul></div>`;
+  }
+
+  // 3. Список друзей
+  const friends = await getFriends(familyId, currentUser);
+  html += `<div><b>Your friends:</b><ul>`;
+  for (const f of friends) {
+    html += `<li>
+      ${f.uid} 
+      <span style="color:#888;font-size:0.95em;">[${f.status}${f.asQuestmaster ? ', Questmaster' : ''}]</span>
+      <button class="fancy-btn" onclick="removeFriendUI('${f.uid}')">Remove</button>
+      <button class="fancy-btn" onclick="toggleQMUI('${f.uid}', ${!f.asQuestmaster})">
+        ${f.asQuestmaster ? 'Remove QM' : 'Make QM'}
+      </button>
+      </li>`;
+  }
+  html += `</ul></div>`;
+
+  document.getElementById('page-friends').innerHTML = html;
+
+  // Навесить обработчики
+  document.getElementById('add-friend-btn').onclick = async () => {
+    let v = document.getElementById('friend-uid-input').value.trim();
+    if (!v) return;
+    try {
+      await sendFriendRequest(familyId, currentUser, v);
+      document.getElementById('friend-add-status').textContent = "Request sent!";
+      renderFriendsPage();
+    } catch (e) {
+      document.getElementById('friend-add-status').textContent = "Error: " + e.message;
+    }
+  };
+}
+window.renderFriendsPage = renderFriendsPage;
+
+// Для кнопок принять/отклонить/удалить/назначить QM:
+window.acceptFriendUI = async function(uid) {
+  await acceptFriendRequest(familyId, currentUser, uid);
+  renderFriendsPage();
+};
+window.declineFriendUI = async function(uid) {
+  await declineFriendRequest(familyId, currentUser, uid);
+  renderFriendsPage();
+};
+window.removeFriendUI = async function(uid) {
+  await removeFriend(familyId, currentUser, uid);
+  renderFriendsPage();
+};
+window.toggleQMUI = async function(uid, asQM) {
+  await setFriendAsQuestmaster(familyId, currentUser, uid, asQM);
+  renderFriendsPage();
+};
 
 // ====== On Load ======
 window.closeModal = closeModal;
